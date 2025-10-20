@@ -8,10 +8,10 @@ use Illuminate\Support\Str;
 
 class InfrastructureTypeController extends Controller
 {
-    public function index() { return InfrastructureType::orderBy('name')->get(); }
+    public function index() { $this->authorize('viewAny', InfrastructureType::class); return InfrastructureType::orderBy('name')->get(); }
 
     public function store(Request $request)
-    {
+    { $this->authorize('create', InfrastructureType::class);
         $data = $request->validate([
             'name' => ['required','string','max:255'],
             'description' => ['nullable','string'],
@@ -24,10 +24,10 @@ class InfrastructureTypeController extends Controller
         return response()->json($type, 201);
     }
 
-    public function show(InfrastructureType $infrastructure_type) { return $infrastructure_type; }
+    public function show(InfrastructureType $infrastructure_type) { $this->authorize('view', $infrastructure_type); return $infrastructure_type; }
 
     public function update(Request $request, InfrastructureType $infrastructure_type)
-    {
+    { $this->authorize('update', $infrastructure_type);
         $data = $request->validate([
             'name' => ['required','string','max:255'],
             'description' => ['nullable','string'],
@@ -41,7 +41,7 @@ class InfrastructureTypeController extends Controller
     }
 
     public function destroy(InfrastructureType $infrastructure_type)
-    {
+    { $this->authorize('delete', $infrastructure_type);
         $infrastructure_type->delete();
         return response()->noContent();
     }

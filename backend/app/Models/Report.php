@@ -17,6 +17,8 @@ class Report extends Model
         'submitted_at','reviewed_at','assigned_at','resolved_at','reported_by_user_id','location'
     ];
 
+    protected $hidden = ['citizen_email_enc','citizen_phone_enc','location_precise_enc'];
+
     protected $casts = [
         'citizen_email_enc' => Encrypted::class,
         'citizen_phone_enc' => Encrypted::class,

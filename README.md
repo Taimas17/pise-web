@@ -34,6 +34,9 @@ Notes:
 ## OpenAPI
 - Voir `docs/openapi.yaml`
 
+## Rôles & autorisations
+- Voir `docs/roles-permissions.md` (Policies Laravel appliquées aux endpoints)
+
 ## Intégrations
 - KoboToolbox: stubs (`KoboSyncService`, job `ImportKoboSubmissions`, commande `kobo:sync`) — renseigner `.env`
 

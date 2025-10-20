@@ -19,6 +19,10 @@ class ReportController extends Controller
     {
         $query = Report::query()->with(['type','zone','photos']);
 
+        if (optional($request->user())->role === 'citizen') {
+            $query->where('reported_by_user_id', $request->user()->id);
+        }
+
         if ($type = $request->input('type_id')) $query->where('infrastructure_type_id', $type);
         if ($status = $request->input('status')) $query->where('status', $status);
         if ($crit = $request->input('criticality')) $query->where('criticality', $crit);
@@ -97,7 +101,7 @@ class ReportController extends Controller
 
     public function uploadPhotos(Request $request, Report $report)
     {
-        $this->authorizeEdit($request, $report);
+        $this->authorize('update', $report);
         $maxPhotos = (int) env('REPORT_MAX_PHOTOS', 5);
         $maxMb = (int) env('REPORT_MAX_PHOTO_MB', 5);
         $request->validate([
@@ -109,7 +113,7 @@ class ReportController extends Controller
 
     public function update(Request $request, Report $report)
     {
-        $this->authorizeEdit($request, $report);
+        $this->authorize('update', $report);
         $data = $request->validate([
             'status' => ['nullable','in:draft,pending_review,assigned,resolved,rejected'],
             'zone_id' => ['nullable','exists:zones,id'],
@@ -137,6 +141,7 @@ class ReportController extends Controller
 
     public function review(Request $request, Report $report)
     {
+        $this->authorize('review', $report);
         $data = $request->validate([
             'action' => ['required','in:approve,reject'],
             'comment' => ['nullable','string','max:2000'],
@@ -161,6 +166,7 @@ class ReportController extends Controller
 
     public function assign(Request $request, Report $report)
     {
+        $this->authorize('assign', $report);
         $data = $request->validate([
             'agent_id' => ['required','exists:users,id'],
         ]);
@@ -184,12 +190,7 @@ class ReportController extends Controller
         return $report->load('assignments');
     }
 
-    private function authorizeEdit(Request $request, Report $report): void
-    {
-        $user = $request->user();
-        if (!$user) abort(403);
-        if (!in_array($user->role, ['admin','moderator','agent'], true)) abort(403);
-    }
+
 
     private function handlePhotos(Request $request, Report $report, int $maxPhotos, int $maxMb): void
     {
