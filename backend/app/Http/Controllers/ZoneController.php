@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 class ZoneController extends Controller
 {
     public function index(Request $request)
-    {
+    { $this->authorize('viewAny', \App\Models\Zone::class);
         $query = Zone::query();
         if ($level = $request->input('level')) $query->where('level', $level);
         if ($parent = $request->input('parent_id')) $query->where('parent_id', $parent);
@@ -17,7 +17,7 @@ class ZoneController extends Controller
     }
 
     public function store(Request $request)
-    {
+    { $this->authorize('create', \App\Models\Zone::class);
         $data = $request->validate([
             'name' => ['required','string','max:255'],
             'level' => ['required','in:commune,arrondissement,quartier'],
@@ -29,7 +29,7 @@ class ZoneController extends Controller
     }
 
     public function importGeoJson(Request $request)
-    {
+    { $this->authorize('import', \App\Models\Zone::class);
         $request->validate(['file' => ['required','file','mimetypes:application/json,application/geo+json']]);
         $content = json_decode(file_get_contents($request->file('file')->getRealPath()), true);
         $features = $content['features'] ?? [];
