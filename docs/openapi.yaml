@@ -1,0 +1,199 @@
+openapi: 3.0.3
+info:
+  title: PISE API
+  version: 0.1.0
+  description: API du pilote PISE (MVP) — Auth Sanctum, Reports, Exports, Stats.
+servers:
+  - url: http://api.pise.local/api
+paths:
+  /auth/register:
+    post:
+      summary: Inscription citoyen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+                phone: { type: string }
+      responses:
+        '200': { description: OK }
+  /auth/login:
+    post:
+      summary: Connexion (SPA Sanctum)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        '200': { description: OK }
+  /auth/logout:
+    post:
+      summary: Déconnexion
+      responses:
+        '200': { description: OK }
+      security: [ { cookieAuth: [] } ]
+  /me:
+    get:
+      summary: Profil utilisateur courant
+      responses:
+        '200': { description: OK }
+      security: [ { cookieAuth: [] } ]
+  /reports:
+    get:
+      summary: Lister les signalements
+      parameters:
+        - in: query
+          name: type_id
+          schema: { type: integer }
+        - in: query
+          name: status
+          schema: { type: string, enum: [draft,pending_review,assigned,resolved,rejected] }
+        - in: query
+          name: criticality
+          schema: { type: string, enum: [faible,moyenne,haute] }
+        - in: query
+          name: zone_id
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+      security: [ { cookieAuth: [] } ]
+    post:
+      summary: Créer un signalement
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [infrastructure_type_id, lat, lng, criticality]
+              properties:
+                infrastructure_type_id: { type: integer }
+                zone_id: { type: integer }
+                criticality: { type: string, enum: [faible,moyenne,haute] }
+                title: { type: string }
+                description: { type: string }
+                public_location: { type: boolean }
+                lat: { type: number, format: float }
+                lng: { type: number, format: float }
+                citizen_email: { type: string, format: email }
+                citizen_phone: { type: string }
+                photos[]:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '201': { description: Créé }
+  /reports/{id}:
+    get:
+      summary: Détail d'un signalement
+      responses:
+        '200': { description: OK }
+      security: [ { cookieAuth: [] } ]
+    patch:
+      summary: Mettre à jour un signalement (statut, criticité, zone)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: string, enum: [draft,pending_review,assigned,resolved,rejected] }
+                criticality: { type: string, enum: [faible,moyenne,haute] }
+                zone_id: { type: integer }
+                comment: { type: string }
+      responses:
+        '200': { description: OK }
+      security: [ { cookieAuth: [] } ]
+  /reports/{id}/photos:
+    post:
+      summary: Ajouter des photos au signalement
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                photos[]:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '200': { description: OK }
+  /reports/{id}/review:
+    post:
+      summary: Revue modérateur (approuver / rejeter)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action: { type: string, enum: [approve, reject] }
+                comment: { type: string }
+      responses:
+        '200': { description: OK }
+      security: [ { cookieAuth: [] } ]
+  /reports/{id}/assign:
+    post:
+      summary: Assigner à un agent
+    
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [agent_id]
+              properties:
+                agent_id: { type: integer }
+      responses:
+        '200': { description: OK }
+      security: [ { cookieAuth: [] } ]
+  /reports/stats:
+    get:
+      summary: Statistiques / KPIs
+      responses:
+        '200': { description: OK }
+      security: [ { cookieAuth: [] } ]
+  /infrastructure-types:
+    get:
+      summary: Lister types d'infrastructure
+      responses: { '200': { description: OK } }
+      security: [ { cookieAuth: [] } ]
+    post:
+      summary: Créer type
+      responses: { '201': { description: Créé } }
+      security: [ { cookieAuth: [] } ]
+  /zones:
+    get: { summary: Lister zones, responses: { '200': { description: OK } }, security: [ { cookieAuth: [] } ] }
+    post: { summary: Créer zone, responses: { '201': { description: Créé } }, security: [ { cookieAuth: [] } ] }
+  /zones/import:
+    post: { summary: Import GeoJSON, responses: { '201': { description: Import ok } }, security: [ { cookieAuth: [] } ] }
+  /exports/reports.pdf:
+    get: { summary: Export PDF, responses: { '200': { description: Fichier PDF } }, security: [ { cookieAuth: [] } ] }
+  /exports/reports.xlsx:
+    get: { summary: Export Excel, responses: { '200': { description: Fichier Excel } }, security: [ { cookieAuth: [] } ] }
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: XSRF-TOKEN
