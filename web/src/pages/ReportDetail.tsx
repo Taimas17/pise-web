@@ -9,6 +9,7 @@ import { toast } from "../components/ui/sonner";
 import { useAuth } from "../hooks/useAuth";
 import { Skeleton } from "../components/ui/skeleton";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogTrigger } from "../components/ui/dialog";
 
 export default function ReportDetail(){
   const { id } = useParams();
@@ -199,14 +200,22 @@ export default function ReportDetail(){
         <div className="font-medium mb-2">Photos</div>
         <div className="flex gap-2 flex-wrap">
           {report.photos?.map((p:any, index:number)=>(
-            <a href={`${API_URL}/storage/${p.path}`} key={p.id ?? index} target="_blank">
-              <img 
-                src={`${API_URL}/storage/${p.thumbnail_path || p.path}`} 
-                className="w-32 h-32 object-cover border"
-                onError={(e)=>{ (e.currentTarget as HTMLImageElement).style.display='none'; }}
-                alt={`Photo ${index+1} du signalement #${report.id}`}
-              />
-            </a>
+            <Dialog key={p.id ?? index}>
+              <DialogTrigger asChild>
+                <button className="border" aria-label={`Agrandir la photo ${index+1}`}>
+                  <img 
+                    src={`${API_URL}/storage/${p.thumbnail_path || p.path}`} 
+                    className="w-32 h-32 object-cover"
+                    onError={(e)=>{ (e.currentTarget as HTMLImageElement).style.display='none'; }}
+                    alt={`Photo ${index+1} du signalement #${report.id}`}
+                  />
+                </button>
+              </DialogTrigger>
+              <DialogContent>
+                <img src={`${API_URL}/storage/${p.path}`} alt={`Photo ${index+1} du signalement #${report.id}`} className="max-h-[80vh] w-auto mx-auto" />
+                <a className="text-sm text-sky-600 underline" target="_blank" href={`${API_URL}/storage/${p.path}`}>Ouvrir l’original</a>
+              </DialogContent>
+            </Dialog>
           ))}
         </div>
       </div>

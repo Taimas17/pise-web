@@ -24,19 +24,30 @@ function TypesManager(){
   const [editingName, setEditingName] = useState("");
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [canManageTypes, setCanManageTypes] = useState<boolean | undefined>(undefined);
   async function load(){ try { setLoading(true); const { data } = await api.get('/infrastructure-types'); setTypes(data); } catch {} finally { setLoading(false); } }
   useEffect(()=>{ load(); },[]);
-  async function add(){ if(!name) return; try { await api.post('/infrastructure-types', { name }); toast('Type ajouté'); setName(''); await load(); } catch { toast('Erreur'); } }
-  async function startEdit(t:any){ setEditingId(t.id); setEditingName(t.name); }
-  async function saveEdit(){ if(!editingId) return; try { await api.patch(`/infrastructure-types/${editingId}`, { name: editingName }); toast('Type mis à jour'); setEditingId(null); await load(); } catch { toast('Erreur lors de la mise à jour'); } }
-  async function confirmRemove(){ if(deleteId==null) return; try { await api.delete(`/infrastructure-types/${deleteId}`); toast('Supprimé'); setDeleteId(null); await load(); } catch (e:any) { toast(e?.response?.data?.message || 'Suppression impossible'); } }
+  useEffect(()=>{ (async()=>{
+    try {
+      const res = await api.post('/infrastructure-types', { name: '' }, { headers: { 'X-Skip-Error-Toast': '1' }, validateStatus: ()=> true });
+      setCanManageTypes(res.status === 422 ? true : res.status === 403 ? false : undefined);
+    } catch {}
+  })(); },[]);
+  async function add(){ if(!name || canManageTypes === false) return; try { await api.post('/infrastructure-types', { name }); toast('Type ajouté'); setName(''); await load(); } catch { toast('Erreur'); } }
+  async function startEdit(t:any){ if (canManageTypes === false) return; setEditingId(t.id); setEditingName(t.name); }
+  async function saveEdit(){ if(!editingId || canManageTypes === false) return; try { await api.patch(`/infrastructure-types/${editingId}`, { name: editingName }); toast('Type mis à jour'); setEditingId(null); await load(); } catch { toast('Erreur lors de la mise à jour'); } }
+  async function confirmRemove(){ if(deleteId==null || canManageTypes === false) return; try { await api.delete(`/infrastructure-types/${deleteId}`); toast('Supprimé'); setDeleteId(null); await load(); } catch (e:any) { toast(e?.response?.data?.message || 'Suppression impossible'); } }
   return (
     <div className="border rounded p-3">
       <div className="font-medium mb-2">Types d’infrastructure</div>
-      <div className="flex gap-2 mb-2">
-        <Input placeholder="Nouveau type" value={name} onChange={e=>setName(e.target.value)} aria-label="Nouveau type" />
-        <Button onClick={add} aria-label="Ajouter un type">Ajouter</Button>
-      </div>
+      {canManageTypes === false ? (
+        <div className="text-sm text-gray-600">Vous n’avez pas les droits pour gérer les types.</div>
+      ) : (
+        <div className="flex gap-2 mb-2">
+          <Input placeholder="Nouveau type" value={name} onChange={e=>setName(e.target.value)} aria-label="Nouveau type" />
+          <Button onClick={add} aria-label="Ajouter un type" disabled={canManageTypes === false}>Ajouter</Button>
+        </div>
+      )}
       {loading ? (
         <div className="grid gap-2">
           {Array.from({length:4}).map((_,i)=>(<Skeleton key={i} className="h-8" />))}
@@ -48,28 +59,30 @@ function TypesManager(){
               {editingId === t.id ? (
                 <>
                   <Input value={editingName} onChange={e=>setEditingName(e.target.value)} className="max-w-xs" aria-label="Nouveau nom de type" />
-                  <Button size="sm" onClick={saveEdit} aria-label="Enregistrer le type">Enregistrer</Button>
+                  <Button size="sm" onClick={saveEdit} aria-label="Enregistrer le type" disabled={canManageTypes === false}>Enregistrer</Button>
                   <Button size="sm" variant="ghost" onClick={()=>setEditingId(null)} aria-label="Annuler">Annuler</Button>
                 </>
               ) : (
                 <>
                   <span className="flex-1">{t.name}</span>
-                  <Button size="sm" variant="outline" onClick={()=>startEdit(t)} aria-label={`Renommer ${t.name}`}>Renommer</Button>
-                  <AlertDialog open={deleteId===t.id} onOpenChange={(o)=> setDeleteId(o? t.id : null)}>
-                    <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="destructive" aria-label={`Supprimer ${t.name}`}>Supprimer</Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Supprimer ce type ?</AlertDialogTitle>
-                        <AlertDialogDescription>Cette action peut échouer si le type est en usage.</AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Annuler</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmRemove}>Confirmer</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  {canManageTypes !== false && <Button size="sm" variant="outline" onClick={()=>startEdit(t)} aria-label={`Renommer ${t.name}`}>Renommer</Button>}
+                  {canManageTypes !== false && (
+                    <AlertDialog open={deleteId===t.id} onOpenChange={(o)=> setDeleteId(o? t.id : null)}>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="destructive" aria-label={`Supprimer ${t.name}`}>Supprimer</Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Supprimer ce type ?</AlertDialogTitle>
+                          <AlertDialogDescription>Cette action peut échouer si le type est en usage.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Annuler</AlertDialogCancel>
+                          <AlertDialogAction onClick={confirmRemove}>Confirmer</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
                 </>
               )}
             </li>
@@ -121,6 +134,7 @@ function ZonesList(){
   const [renamingName, setRenamingName] = useState('');
   const [loading, setLoading] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [canManageZones, setCanManageZones] = useState<boolean | undefined>(undefined);
   async function load(){
     try {
       setLoading(true);
@@ -131,8 +145,17 @@ function ZonesList(){
     } catch {} finally { setLoading(false); }
   }
   useEffect(()=>{ load(); }, [level, parentId, page]);
-  async function rename(){ if(!renamingId) return; try { await api.patch(`/zones/${renamingId}`, { name: renamingName }); toast('Zone renommée'); setRenamingId(null); await load(); } catch { toast('Action non disponible'); } }
-  async function confirmRemove(){ if(deleteId==null) return; try { await api.delete(`/zones/${deleteId}`); toast('Supprimée'); setDeleteId(null); await load(); } catch { toast('Action non disponible'); } }
+  useEffect(()=>{ (async()=>{
+    if (!zones?.length) return;
+    const first = zones[0];
+    try {
+      const res = await api.patch(`/zones/${first.id}`, { name: first.name }, { headers: { 'X-Skip-Error-Toast': '1' }, validateStatus: ()=> true });
+      // 200/204/422 => autorisé, 403 => interdit
+      setCanManageZones(res.status === 403 ? false : true);
+    } catch {}
+  })(); }, [zones]);
+  async function rename(){ if(!renamingId || canManageZones === false) return; try { await api.patch(`/zones/${renamingId}`, { name: renamingName }); toast('Zone renommée'); setRenamingId(null); await load(); } catch { toast('Action non disponible'); } }
+  async function confirmRemove(){ if(deleteId==null || canManageZones === false) return; try { await api.delete(`/zones/${deleteId}`); toast('Supprimée'); setDeleteId(null); await load(); } catch { toast('Action non disponible'); } }
   return (
     <div className="border rounded p-3">
       <div className="font-medium mb-2">Zones</div>
@@ -170,27 +193,29 @@ function ZonesList(){
                   <td className="p-2 flex gap-2">
                     {renamingId === z.id ? (
                       <>
-                        <Button size="sm" onClick={rename} aria-label="Enregistrer la zone">Enregistrer</Button>
+                        <Button size="sm" onClick={rename} aria-label="Enregistrer la zone" disabled={canManageZones === false}>Enregistrer</Button>
                         <Button size="sm" variant="ghost" onClick={()=>setRenamingId(null)} aria-label="Annuler">Annuler</Button>
                       </>
                     ) : (
                       <>
-                        <Button size="sm" variant="outline" onClick={()=>{ setRenamingId(z.id); setRenamingName(z.name); }} aria-label={`Renommer ${z.name}`}>Renommer</Button>
-                        <AlertDialog open={deleteId===z.id} onOpenChange={(o)=> setDeleteId(o? z.id : null)}>
-                          <AlertDialogTrigger asChild>
-                            <Button size="sm" variant="destructive" aria-label={`Supprimer ${z.name}`}>Supprimer</Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Supprimer cette zone ?</AlertDialogTitle>
-                              <AlertDialogDescription>Cette action est potentiellement irréversible.</AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Annuler</AlertDialogCancel>
-                              <AlertDialogAction onClick={confirmRemove}>Confirmer</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        {canManageZones !== false && <Button size="sm" variant="outline" onClick={()=>{ setRenamingId(z.id); setRenamingName(z.name); }} aria-label={`Renommer ${z.name}`}>Renommer</Button>}
+                        {canManageZones !== false && (
+                          <AlertDialog open={deleteId===z.id} onOpenChange={(o)=> setDeleteId(o? z.id : null)}>
+                            <AlertDialogTrigger asChild>
+                              <Button size="sm" variant="destructive" aria-label={`Supprimer ${z.name}`}>Supprimer</Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Supprimer cette zone ?</AlertDialogTitle>
+                                <AlertDialogDescription>Cette action est potentiellement irréversible.</AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                <AlertDialogAction onClick={confirmRemove}>Confirmer</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
                       </>
                     )}
                   </td>
