@@ -8,56 +8,60 @@ import Account from "./pages/Account";
 import { Toaster, toast } from "./components/ui/sonner";
 import { Button } from "./components/ui/button";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
+import { PreferencesProvider } from "./hooks/usePreferences";
+import PreferencesPanel from "./components/PreferencesPanel";
 
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <div className="min-h-screen flex flex-col">
-          <HeaderNav />
-          <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/signaler" element={<SignalementForm />} />
-              <Route
-                path="/suivi"
-                element={
-                  <RequireAuth>
-                    <ReportsList />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/suivi/:id"
-                element={
-                  <RequireAuth>
-                    <ReportDetail />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/dashboard"
-                element={
-                  <RequireRoles roles={["agent", "moderator", "admin"]}>
-                    <Dashboard />
-                  </RequireRoles>
-                }
-              />
-              <Route
-                path="/admin"
-                element={
-                  <RequireRoles roles={["moderator", "admin"]}>
-                    <Admin />
-                  </RequireRoles>
-                }
-              />
-              <Route path="/compte" element={<Account />} />
-            </Routes>
-          </main>
-          <footer className="border-t text-center text-sm text-gray-500 py-4">© {new Date().getFullYear()} PISE</footer>
-        </div>
-        <Toaster />
-      </AuthProvider>
+      <PreferencesProvider>
+        <AuthProvider>
+          <div className="min-h-screen flex flex-col">
+            <HeaderNav />
+            <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/signaler" element={<SignalementForm />} />
+                <Route
+                  path="/suivi"
+                  element={
+                    <RequireAuth>
+                      <ReportsList />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/suivi/:id"
+                  element={
+                    <RequireAuth>
+                      <ReportDetail />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/dashboard"
+                  element={
+                    <RequireRoles roles={["agent", "moderator", "admin"]}>
+                      <Dashboard />
+                    </RequireRoles>
+                  }
+                />
+                <Route
+                  path="/admin"
+                  element={
+                    <RequireRoles roles={["moderator", "admin"]}>
+                      <Admin />
+                    </RequireRoles>
+                  }
+                />
+                <Route path="/compte" element={<Account />} />
+              </Routes>
+            </main>
+            <footer className="border-t text-center text-sm text-gray-500 py-4">© {new Date().getFullYear()} PISE</footer>
+          </div>
+          <Toaster />
+        </AuthProvider>
+      </PreferencesProvider>
     </BrowserRouter>
   );
 }
@@ -80,6 +84,7 @@ function HeaderNav(){
           {(role === "moderator" || role === "admin") && (
             <NavLink to="/admin" className={({isActive})=>isActive?"text-sky-700 font-medium":"text-gray-600 hover:text-gray-900"}>Admin</NavLink>
           )}
+          <PreferencesPanel />
           <NavLink to="/compte" className={({isActive})=>isActive?"text-sky-700 font-medium":"text-gray-600 hover:text-gray-900"}>Compte</NavLink>
         </nav>
       </div>
