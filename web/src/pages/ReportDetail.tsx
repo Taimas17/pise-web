@@ -19,10 +19,38 @@ export default function ReportDetail(){
   const [loading, setLoading] = useState(false);
   const [openReject, setOpenReject] = useState(false);
   const [openResolve, setOpenResolve] = useState(false);
+  const [probeReview, setProbeReview] = useState<boolean | undefined>(undefined);
+  const [probeAssign, setProbeAssign] = useState<boolean | undefined>(undefined);
+  const [probeResolve, setProbeResolve] = useState<boolean | undefined>(undefined);
   const titleRef = useRef<HTMLHeadingElement>(null);
 
   async function load(){ setLoading(true); try { const { data } = await api.get(`/reports/${id}`); setReport(data); titleRef.current?.focus(); } finally { setLoading(false); } }
   useEffect(()=>{ load(); }, [id]);
+
+  useEffect(()=>{
+    (async()=>{
+      if (!report) return;
+      const perms = report.permissions || report.can;
+      if (perms) return; // l'API fournit déjà des permissions
+      try {
+        // REVIEW probe: reject without comment -> 422 if allowed, 403 if forbidden
+        await api.post(`/reports/${id}/review`, { action: 'reject', comment: '' }, { headers: { 'X-Skip-Error-Toast': '1' }, validateStatus: ()=> true });
+      } catch {}
+      finally {}
+      try {
+        const res = await api.post(`/reports/${id}/review`, { action: 'reject', comment: '' }, { headers: { 'X-Skip-Error-Toast': '1' }, validateStatus: ()=> true });
+        setProbeReview(res.status === 422 ? true : res.status === 403 ? false : undefined);
+      } catch {}
+      try {
+        const res = await api.post(`/reports/${id}/assign`, { agent_id: 0 }, { headers: { 'X-Skip-Error-Toast': '1' }, validateStatus: ()=> true });
+        setProbeAssign(res.status === 422 ? true : res.status === 403 ? false : undefined);
+      } catch {}
+      try {
+        const res = await api.patch(`/reports/${id}`, { status: 'INVALID' }, { headers: { 'X-Skip-Error-Toast': '1' }, validateStatus: ()=> true });
+        setProbeResolve(res.status === 422 ? true : res.status === 403 ? false : undefined);
+      } catch {}
+    })();
+  }, [report, id]);
 
   async function approve(){ try { await api.post(`/reports/${id}/review`, { action: 'approve', comment }); toast('Signalement approuvé'); await load(); } catch { toast('Erreur'); } }
   async function confirmReject(){ if (!comment) { toast('Commentaire obligatoire'); return; } try { await api.post(`/reports/${id}/review`, { action: 'reject', comment }); toast('Signalement rejeté'); setOpenReject(false); await load(); } catch { toast('Erreur'); } }
@@ -59,9 +87,13 @@ export default function ReportDetail(){
   const fallbackCanAssign = status !== 'resolved' && status !== 'rejected';
   const fallbackCanResolve = status === 'assigned';
 
-  const canReview = roleCanReview && (apiCanReview ?? fallbackCanReview);
-  const canAssign = roleCanAssign && (apiCanAssign ?? fallbackCanAssign);
-  const canResolve = roleCanResolve && (apiCanResolve ?? fallbackCanResolve);
+  const effReview = apiCanReview ?? (probeReview !== undefined ? probeReview : fallbackCanReview);
+  const effAssign = apiCanAssign ?? (probeAssign !== undefined ? probeAssign : fallbackCanAssign);
+  const effResolve = apiCanResolve ?? (probeResolve !== undefined ? probeResolve : fallbackCanResolve);
+
+  const canReview = roleCanReview && effReview;
+  const canAssign = roleCanAssign && effAssign;
+  const canResolve = roleCanResolve && effResolve;
 
   return (
     <div className="grid gap-4">
@@ -85,13 +117,13 @@ export default function ReportDetail(){
       <div className="grid gap-2">
         <Textarea placeholder="Commentaire" aria-label="Commentaire" value={comment} onChange={e=>setComment(e.target.value)} />
         <div className="flex flex-wrap gap-2">
-          {roleCanReview && (
-            <Button onClick={approve} aria-label="Approuver le signalement" disabled={!canReview} title={!canReview ? `Action indisponible pour le statut ${status}` : undefined}>Approuver</Button>
+          {roleCanReview && canReview && (
+            <Button onClick={approve} aria-label="Approuver le signalement">Approuver</Button>
           )}
-          {roleCanReview && (
-            <AlertDialog open={openReject} onOpenChange={(o)=> canReview ? setOpenReject(o) : undefined}>
+          {roleCanReview && canReview && (
+            <AlertDialog open={openReject} onOpenChange={setOpenReject}>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" aria-label="Rejeter le signalement" disabled={!canReview} title={!canReview ? `Action indisponible pour le statut ${status}` : undefined}>Rejeter</Button>
+                <Button variant="destructive" aria-label="Rejeter le signalement">Rejeter</Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
@@ -108,16 +140,16 @@ export default function ReportDetail(){
               </AlertDialogContent>
             </AlertDialog>
           )}
-          {roleCanAssign && (
+          {roleCanAssign && canAssign && (
             <div className="flex items-center gap-2">
-              <Input placeholder="ID Agent" aria-label="Identifiant agent" value={agentId} onChange={e=>setAgentId(e.target.value)} className="w-28" disabled={!canAssign} />
-              <Button variant="outline" onClick={assign} aria-label="Assigner un agent" disabled={!canAssign} title={!canAssign ? `Action indisponible pour le statut ${status}` : undefined}>Assigner</Button>
+              <Input placeholder="ID Agent" aria-label="Identifiant agent" value={agentId} onChange={e=>setAgentId(e.target.value)} className="w-28" />
+              <Button variant="outline" onClick={assign} aria-label="Assigner un agent">Assigner</Button>
             </div>
           )}
-          {roleCanResolve && (
-            <AlertDialog open={openResolve} onOpenChange={(o)=> canResolve ? setOpenResolve(o) : undefined}>
+          {roleCanResolve && canResolve && (
+            <AlertDialog open={openResolve} onOpenChange={setOpenResolve}>
               <AlertDialogTrigger asChild>
-                <Button variant="outline" aria-label="Marquer comme résolu" disabled={!canResolve} title={!canResolve ? `Action indisponible pour le statut ${status}` : undefined}>Marquer résolu</Button>
+                <Button variant="outline" aria-label="Marquer comme résolu">Marquer résolu</Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>

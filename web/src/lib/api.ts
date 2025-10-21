@@ -13,13 +13,14 @@ api.interceptors.response.use(
   (res) => res,
   (error) => {
     const status = error?.response?.status;
+    const skipToast = !!error?.config?.headers?.["X-Skip-Error-Toast"];
     if (status === 401) {
-      if (window.location.pathname !== "/compte") {
+      if (!skipToast && window.location.pathname !== "/compte") {
         toast("Session expirée. Veuillez vous reconnecter.");
         window.location.href = "/compte";
       }
     } else if (status === 403) {
-      toast("Accès refusé");
+      if (!skipToast) toast("Accès refusé");
     }
     return Promise.reject(error);
   }
