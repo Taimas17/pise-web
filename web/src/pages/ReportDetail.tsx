@@ -1,30 +1,57 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, API_URL } from "../lib/api";
 import { useParams } from "react-router-dom";
 import Map from "../components/Map";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
+import { toast } from "../components/ui/sonner";
+import { useAuth } from "../hooks/useAuth";
+import { Skeleton } from "../components/ui/skeleton";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../components/ui/alert-dialog";
 
 export default function ReportDetail(){
   const { id } = useParams();
+  const { user } = useAuth();
   const [report, setReport] = useState<any>(null);
   const [comment, setComment] = useState("");
   const [agentId, setAgentId] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [openReject, setOpenReject] = useState(false);
+  const [openResolve, setOpenResolve] = useState(false);
+  const titleRef = useRef<HTMLHeadingElement>(null);
 
-  async function load(){ const { data } = await api.get(`/reports/${id}`); setReport(data); }
+  async function load(){ setLoading(true); try { const { data } = await api.get(`/reports/${id}`); setReport(data); titleRef.current?.focus(); } finally { setLoading(false); } }
   useEffect(()=>{ load(); }, [id]);
 
-  async function approve(){ await api.post(`/reports/${id}/review`, { action: 'approve', comment }); await load(); }
-  async function reject(){ await api.post(`/reports/${id}/review`, { action: 'reject', comment }); await load(); }
-  async function assign(){ if(!agentId) return; await api.post(`/reports/${id}/assign`, { agent_id: Number(agentId) }); await load(); }
-  async function resolve(){ await api.patch(`/reports/${id}`, { status: 'resolved', comment }); await load(); }
+  async function approve(){ try { await api.post(`/reports/${id}/review`, { action: 'approve', comment }); toast('Signalement approuvé'); await load(); } catch { toast('Erreur'); } }
+  async function confirmReject(){ if (!comment) { toast('Commentaire obligatoire'); return; } try { await api.post(`/reports/${id}/review`, { action: 'reject', comment }); toast('Signalement rejeté'); setOpenReject(false); await load(); } catch { toast('Erreur'); } }
+  async function assign(){ if(!agentId) { toast('ID agent requis'); return; } try { await api.post(`/reports/${id}/assign`, { agent_id: Number(agentId) }); toast('Assigné'); await load(); } catch { toast('Erreur'); } }
+  async function confirmResolve(){ try { await api.patch(`/reports/${id}`, { status: 'resolved', comment }); toast('Marqué résolu'); setOpenResolve(false); await load(); } catch { toast('Erreur'); } }
 
-  if (!report) return <p>Chargement…</p>;
+  if (loading || !report) return (
+    <div className="grid gap-4" aria-busy>
+      <Skeleton className="h-7 w-48" />
+      <Skeleton className="h-72 w-full" />
+      <div className="grid grid-cols-2 gap-4">
+        <Skeleton className="h-16" />
+        <Skeleton className="h-16" />
+      </div>
+      <Skeleton className="h-24" />
+    </div>
+  );
+
+  const histories = report.statusHistories || report.status_histories || [];
+  const assignments = report.assignments || [];
+  const role = user?.role;
+
+  const canReview = role === 'moderator' || role === 'admin';
+  const canAssign = role === 'moderator' || role === 'admin';
+  const canResolve = role === 'agent' || role === 'moderator' || role === 'admin';
 
   return (
     <div className="grid gap-4">
-      <h2 className="text-xl font-semibold">Signalement #{report.id}</h2>
+      <h2 className="text-xl font-semibold" tabIndex={-1} ref={titleRef}>Signalement #{report.id}</h2>
       {report.lat_masked && report.lng_masked && <Map lat={report.lat_masked} lng={report.lng_masked} />}
       <div className="grid grid-cols-2 gap-4">
         <div>
@@ -40,24 +67,99 @@ export default function ReportDetail(){
         <div className="text-sm text-gray-600">Description</div>
         <div>{report.description}</div>
       </div>
+
       <div className="grid gap-2">
-        <Textarea placeholder="Commentaire" value={comment} onChange={e=>setComment(e.target.value)} />
+        <Textarea placeholder="Commentaire" aria-label="Commentaire" value={comment} onChange={e=>setComment(e.target.value)} />
         <div className="flex flex-wrap gap-2">
-          <Button onClick={approve}>Approuver</Button>
-          <Button variant="destructive" onClick={reject}>Rejeter</Button>
-          <div className="flex items-center gap-2">
-            <Input placeholder="ID Agent" value={agentId} onChange={e=>setAgentId(e.target.value)} className="w-28" />
-            <Button variant="outline" onClick={assign}>Assigner</Button>
-          </div>
-          <Button variant="outline" onClick={resolve}>Marquer résolu</Button>
+          {canReview && <Button onClick={approve} aria-label="Approuver le signalement">Approuver</Button>}
+          {canReview && (
+            <AlertDialog open={openReject} onOpenChange={setOpenReject}>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" aria-label="Rejeter le signalement">Rejeter</Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Confirmer le rejet</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Le rejet nécessite un commentaire. Cette action est irréversible.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <Textarea placeholder="Commentaire obligatoire" value={comment} onChange={e=>setComment(e.target.value)} aria-label="Commentaire de rejet" />
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction onClick={confirmReject}>Confirmer</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+          {canAssign && (
+            <div className="flex items-center gap-2">
+              <Input placeholder="ID Agent" aria-label="Identifiant agent" value={agentId} onChange={e=>setAgentId(e.target.value)} className="w-28" />
+              <Button variant="outline" onClick={assign} aria-label="Assigner un agent">Assigner</Button>
+            </div>
+          )}
+          {canResolve && (
+            <AlertDialog open={openResolve} onOpenChange={setOpenResolve}>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" aria-label="Marquer comme résolu">Marquer résolu</Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Confirmer la résolution</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Cette action marquera le signalement comme résolu.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction onClick={confirmResolve}>Confirmer</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
       </div>
+
+      <div>
+        <div className="font-medium mb-2">Historique de statut</div>
+        <div className="text-sm grid gap-1">
+          {histories.length ? histories.map((h:any, idx:number)=> (
+            <div key={h.id || `${h.from}_${h.to}_${h.date}` } className="flex items-center justify-between border rounded p-2">
+              <div>
+                <div className="font-medium">{h.from_status || h.from} → {h.to_status || h.to}</div>
+                {h.comment && <div className="text-gray-600">{h.comment}</div>}
+              </div>
+              <div className="text-gray-500">{new Date(h.created_at || h.date).toLocaleString()}</div>
+            </div>
+          )) : <div className="text-gray-600">Aucun historique</div>}
+        </div>
+      </div>
+
+      <div>
+        <div className="font-medium mb-2">Affectations</div>
+        <div className="text-sm grid gap-1">
+          {assignments.length ? assignments.map((a:any)=> (
+            <div key={a.id || `${a.agent_id}_${a.created_at}` } className="flex items-center justify-between border rounded p-2">
+              <div>Agent #{a.agent_id}</div>
+              <div className="text-gray-500">{new Date(a.created_at || a.date).toLocaleString()}</div>
+            </div>
+          )) : <div className="text-gray-600">Aucune affectation</div>}
+        </div>
+      </div>
+
       <div>
         <div className="font-medium mb-2">Photos</div>
         <div className="flex gap-2 flex-wrap">
-          {report.photos?.map((p:any)=>(<a href={`${API_URL}/storage/${p.path}`} key={p.id} target="_blank">
-            <img src={`${API_URL}/storage/${p.thumbnail_path || p.path}`} className="w-32 h-32 object-cover border"/>
-          </a>))}
+          {report.photos?.map((p:any, index:number)=>(
+            <a href={`${API_URL}/storage/${p.path}`} key={p.id ?? index} target="_blank">
+              <img 
+                src={`${API_URL}/storage/${p.thumbnail_path || p.path}`} 
+                className="w-32 h-32 object-cover border"
+                onError={(e)=>{ (e.currentTarget as HTMLImageElement).style.display='none'; }}
+                alt={`Photo ${index+1} du signalement #${report.id}`}
+              />
+            </a>
+          ))}
         </div>
       </div>
     </div>
