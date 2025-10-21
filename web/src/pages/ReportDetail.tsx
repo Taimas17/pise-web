@@ -45,9 +45,23 @@ export default function ReportDetail(){
   const assignments = report.assignments || [];
   const role = user?.role;
 
-  const canReview = role === 'moderator' || role === 'admin';
-  const canAssign = role === 'moderator' || role === 'admin';
-  const canResolve = role === 'agent' || role === 'moderator' || role === 'admin';
+  const perms = report.permissions || report.can || {};
+  const apiCanReview = (perms.review ?? report.can_review) as boolean | undefined;
+  const apiCanAssign = (perms.assign ?? report.can_assign) as boolean | undefined;
+  const apiCanResolve = (perms.resolve ?? report.can_resolve) as boolean | undefined;
+
+  const roleCanReview = role === 'moderator' || role === 'admin';
+  const roleCanAssign = role === 'moderator' || role === 'admin';
+  const roleCanResolve = role === 'agent' || role === 'moderator' || role === 'admin';
+
+  const status = report.status as string;
+  const fallbackCanReview = status === 'pending_review';
+  const fallbackCanAssign = status !== 'resolved' && status !== 'rejected';
+  const fallbackCanResolve = status === 'assigned';
+
+  const canReview = roleCanReview && (apiCanReview ?? fallbackCanReview);
+  const canAssign = roleCanAssign && (apiCanAssign ?? fallbackCanAssign);
+  const canResolve = roleCanResolve && (apiCanResolve ?? fallbackCanResolve);
 
   return (
     <div className="grid gap-4">
@@ -71,11 +85,13 @@ export default function ReportDetail(){
       <div className="grid gap-2">
         <Textarea placeholder="Commentaire" aria-label="Commentaire" value={comment} onChange={e=>setComment(e.target.value)} />
         <div className="flex flex-wrap gap-2">
-          {canReview && <Button onClick={approve} aria-label="Approuver le signalement">Approuver</Button>}
-          {canReview && (
-            <AlertDialog open={openReject} onOpenChange={setOpenReject}>
+          {roleCanReview && (
+            <Button onClick={approve} aria-label="Approuver le signalement" disabled={!canReview} title={!canReview ? `Action indisponible pour le statut ${status}` : undefined}>Approuver</Button>
+          )}
+          {roleCanReview && (
+            <AlertDialog open={openReject} onOpenChange={(o)=> canReview ? setOpenReject(o) : undefined}>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" aria-label="Rejeter le signalement">Rejeter</Button>
+                <Button variant="destructive" aria-label="Rejeter le signalement" disabled={!canReview} title={!canReview ? `Action indisponible pour le statut ${status}` : undefined}>Rejeter</Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
@@ -92,16 +108,16 @@ export default function ReportDetail(){
               </AlertDialogContent>
             </AlertDialog>
           )}
-          {canAssign && (
+          {roleCanAssign && (
             <div className="flex items-center gap-2">
-              <Input placeholder="ID Agent" aria-label="Identifiant agent" value={agentId} onChange={e=>setAgentId(e.target.value)} className="w-28" />
-              <Button variant="outline" onClick={assign} aria-label="Assigner un agent">Assigner</Button>
+              <Input placeholder="ID Agent" aria-label="Identifiant agent" value={agentId} onChange={e=>setAgentId(e.target.value)} className="w-28" disabled={!canAssign} />
+              <Button variant="outline" onClick={assign} aria-label="Assigner un agent" disabled={!canAssign} title={!canAssign ? `Action indisponible pour le statut ${status}` : undefined}>Assigner</Button>
             </div>
           )}
-          {canResolve && (
-            <AlertDialog open={openResolve} onOpenChange={setOpenResolve}>
+          {roleCanResolve && (
+            <AlertDialog open={openResolve} onOpenChange={(o)=> canResolve ? setOpenResolve(o) : undefined}>
               <AlertDialogTrigger asChild>
-                <Button variant="outline" aria-label="Marquer comme résolu">Marquer résolu</Button>
+                <Button variant="outline" aria-label="Marquer comme résolu" disabled={!canResolve} title={!canResolve ? `Action indisponible pour le statut ${status}` : undefined}>Marquer résolu</Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
