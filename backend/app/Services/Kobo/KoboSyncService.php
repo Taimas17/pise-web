@@ -19,7 +19,11 @@ class KoboSyncService
     public function sync(): int
     {
         Log::info('KOBO sync stub - configure credentials to enable');
-        // TODO: Implement pulling submissions and mapping to Reports
         return 0;
+    }
+
+    public function getFormIds(): array
+    {
+        return $this->formIds ?? [];
     }
 }

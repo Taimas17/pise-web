@@ -9,6 +9,7 @@ use App\Http\Controllers\ExportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuditController;
+use App\Http\Controllers\IntegrationController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
@@ -48,3 +49,5 @@ Route::get('/users', [UserController::class, 'index'])->middleware(['auth:sanctu
 Route::patch('/users/{user}/role', [UserController::class, 'updateRole'])->middleware(['auth:sanctum','role:admin']);
 
 Route::get('/audit/logs', [AuditController::class, 'logs'])->middleware(['auth:sanctum','role:admin']);
+
+Route::post('/integrations/kobo/sync', [IntegrationController::class, 'koboSync'])->middleware(['auth:sanctum','role:admin']);
