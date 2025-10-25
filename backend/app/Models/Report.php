@@ -14,7 +14,8 @@ class Report extends Model
     protected $fillable = [
         'infrastructure_type_id','zone_id','criticality','status','title','description',
         'public_location','lat_masked','lng_masked','citizen_email_enc','citizen_phone_enc',
-        'submitted_at','reviewed_at','assigned_at','resolved_at','reported_by_user_id','location'
+        'submitted_at','reviewed_at','assigned_at','resolved_at','reported_by_user_id','location',
+        'sla_due_at','sla_review_due_at','escalation_level','escalated_at','closed_reason','closed_category'
     ];
 
     protected $hidden = ['citizen_email_enc','citizen_phone_enc','location_precise_enc'];
@@ -28,6 +29,9 @@ class Report extends Model
         'reviewed_at' => 'datetime',
         'assigned_at' => 'datetime',
         'resolved_at' => 'datetime',
+        'sla_due_at' => 'datetime',
+        'sla_review_due_at' => 'datetime',
+        'escalated_at' => 'datetime',
     ];
 
     protected static function booted(): void

@@ -1,0 +1,8 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {"type":"Feature","properties":{"name":"Commune A","level":"commune"},"geometry":{"type":"Polygon","coordinates":[[[-17.5,14.7],[-17.4,14.7],[-17.4,14.8],[-17.5,14.8],[-17.5,14.7]]]}} ,
+    {"type":"Feature","properties":{"name":"Arrondissement A1","level":"arrondissement","parent":"Commune A"},"geometry":{"type":"Polygon","coordinates":[[[-17.49,14.71],[-17.45,14.71],[-17.45,14.76],[-17.49,14.76],[-17.49,14.71]]]}} ,
+    {"type":"Feature","properties":{"name":"Quartier A1-1","level":"quartier","parent":"Arrondissement A1"},"geometry":{"type":"Polygon","coordinates":[[[-17.485,14.715],[-17.47,14.715],[-17.47,14.73],[-17.485,14.73],[-17.485,14.715]]]}}
+  ]
+}
