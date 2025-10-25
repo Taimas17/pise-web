@@ -190,6 +190,73 @@ paths:
     get: { summary: Export PDF, responses: { '200': { description: Fichier PDF } }, security: [ { cookieAuth: [] } ] }
   /exports/reports.xlsx:
     get: { summary: Export Excel, responses: { '200': { description: Fichier Excel } }, security: [ { cookieAuth: [] } ] }
+  /chantiers:
+    get:
+      summary: Lister les chantiers
+      parameters:
+        - in: query
+          name: infrastructure_type_id
+          schema: { type: integer }
+        - in: query
+          name: status
+          schema: { type: string, enum: [planned,in_progress,on_hold,completed,cancelled] }
+        - in: query
+          name: zone_id
+          schema: { type: integer }
+        - in: query
+          name: manager_user_id
+          schema: { type: integer }
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: sort
+          schema: { type: string, enum: [-created_at,planned_end_at,progress_pct] }
+      responses: { '200': { description: OK } }
+      security: [ { cookieAuth: [] } ]
+    post:
+      summary: Créer un chantier
+      responses: { '201': { description: Créé } }
+      security: [ { cookieAuth: [] } ]
+  /chantiers/{id}:
+    get: { summary: Détail chantier, responses: { '200': { description: OK } }, security: [ { cookieAuth: [] } ] }
+    patch: { summary: Mettre à jour chantier, responses: { '200': { description: OK } }, security: [ { cookieAuth: [] } ] }
+    delete: { summary: Supprimer chantier, responses: { '204': { description: Supprimé } }, security: [ { cookieAuth: [] } ] }
+  /chantiers/{id}/progress:
+    post: { summary: Mettre à jour l'avancement, responses: { '200': { description: OK } }, security: [ { cookieAuth: [] } ] }
+  /chantiers/{id}/lots:
+    get: { summary: Lister lots, responses: { '200': { description: OK } }, security: [ { cookieAuth: [] } ] }
+    post: { summary: Créer lot, responses: { '201': { description: Créé } }, security: [ { cookieAuth: [] } ] }
+  /lots/{id}:
+    patch: { summary: Mettre à jour lot, responses: { '200': { description: OK } }, security: [ { cookieAuth: [] } ] }
+    delete: { summary: Supprimer lot, responses: { '204': { description: Supprimé } }, security: [ { cookieAuth: [] } ] }
+  /chantiers/{id}/etapes:
+    get: { summary: Lister étapes, responses: { '200': { description: OK } }, security: [ { cookieAuth: [] } ] }
+    post: { summary: Créer étape, responses: { '201': { description: Créée } }, security: [ { cookieAuth: [] } ] }
+  /etapes/{id}:
+    patch: { summary: Mettre à jour étape, responses: { '200': { description: OK } }, security: [ { cookieAuth: [] } ] }
+    delete: { summary: Supprimer étape, responses: { '204': { description: Supprimée } }, security: [ { cookieAuth: [] } ] }
+  /chantiers/{id}/expenses:
+    get: { summary: Lister dépenses, responses: { '200': { description: OK } }, security: [ { cookieAuth: [] } ] }
+    post: { summary: Créer dépense, responses: { '201': { description: Créée } }, security: [ { cookieAuth: [] } ] }
+  /expenses/{id}:
+    patch: { summary: Mettre à jour dépense, responses: { '200': { description: OK } }, security: [ { cookieAuth: [] } ] }
+    delete: { summary: Supprimer dépense, responses: { '204': { description: Supprimée } }, security: [ { cookieAuth: [] } ] }
+  /chantiers/{id}/attachments:
+    post: { summary: Uploader une pièce jointe, responses: { '201': { description: Créée } }, security: [ { cookieAuth: [] } ] }
+  /attachments/{id}:
+    delete: { summary: Supprimer pièce jointe, responses: { '204': { description: Supprimée } }, security: [ { cookieAuth: [] } ] }
+  /chantiers/{id}/reports:
+    get: { summary: Lister alertes liées, responses: { '200': { description: OK } }, security: [ { cookieAuth: [] } ] }
+    post: { summary: Lier une alerte, responses: { '200': { description: OK } }, security: [ { cookieAuth: [] } ] }
+  /chantiers/{id}/reports/{report_id}:
+    delete: { summary: Délier une alerte, responses: { '204': { description: Supprimée } }, security: [ { cookieAuth: [] } ] }
+  /chantiers/metrics:
+    get: { summary: KPIs chantiers, responses: { '200': { description: OK } }, security: [ { cookieAuth: [] } ] }
+  /exports/chantiers.pdf:
+    get: { summary: Export PDF chantiers, responses: { '200': { description: Fichier PDF } }, security: [ { cookieAuth: [] } ] }
+  /exports/chantiers.xlsx:
+    get: { summary: Export Excel chantiers, responses: { '200': { description: Fichier Excel } }, security: [ { cookieAuth: [] } ] }
 
 components:
   securitySchemes:

@@ -5,6 +5,7 @@ import Map from "../components/Map";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
+import { toast } from "../components/ui/sonner";
 
 function SlaBlock({ label, dueAt, doneAt, nowTs }:{ label:string; dueAt?: string; doneAt?: string; nowTs: number }){
   if(!dueAt) return (
@@ -101,6 +102,33 @@ useEffect(()=>{ const t = setInterval(()=>setNowTs(Date.now()), 1000); return ()
             <Button variant="outline" onClick={assign}>Assigner</Button>
           </div>
           <Button variant="outline" onClick={resolve}>Marquer résolu</Button>
+        </div>
+        <div className="mt-4 grid gap-2">
+          <div className="font-medium">Chantiers</div>
+          <div className="flex items-center gap-2">
+            <Input placeholder="ID chantier" id="chantier_id" className="w-32" />
+            <Button variant="outline" onClick={async()=>{
+              const el = document.getElementById('chantier_id') as HTMLInputElement | null;
+              const cid = el?.value; if(!cid) return;
+              await api.post(`/chantiers/${cid}/reports`, { report_id: Number(id) });
+              toast('Alerte liée au chantier');
+            }}>Lier à un chantier</Button>
+            <Button onClick={async()=>{
+              const payload:any = {
+                title: report.title || `${report.type?.name || 'Chantier'} #${report.id}`,
+                description: report.description,
+                infrastructure_type_id: report.infrastructure_type_id,
+                zone_id: report.zone_id,
+                status: 'planned',
+                planned_start_at: new Date().toISOString().slice(0,10)+' 00:00:00',
+                planned_end_at: new Date(Date.now()+30*24*3600*1000).toISOString().slice(0,10)+' 00:00:00',
+                budget_planned: 0,
+              };
+              const { data } = await api.post('/chantiers', payload);
+              await api.post(`/chantiers/${data.id}/reports`, { report_id: Number(id) });
+              toast('Chantier créé et lié');
+            }}>Créer un chantier à partir de l’alerte</Button>
+          </div>
         </div>
       </div>
       <div>

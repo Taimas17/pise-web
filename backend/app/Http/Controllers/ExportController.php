@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Report;
+use App\Models\Chantier;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\View;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ReportsExport;
+use App\Exports\ChantiersExport;
 
 class ExportController extends Controller
 {
@@ -70,13 +72,30 @@ class ExportController extends Controller
         return response()->json(['type' => 'FeatureCollection', 'features' => $features]);
     }
 
-    private function zonePath(Report $r): ?string
+    protected function filteredChantiers(Request $request)
     {
-        $zone = $r->zone;
-        if (!$zone) return null;
-        $names = [];
-        $current = $zone;
-        while ($current) { $names[] = $current->name; $current = $current->parent; }
-        return implode('>', array_reverse($names));
+        $query = Chantier::with(['type','zone']);
+        if ($type = $request->input('infrastructure_type_id')) $query->where('infrastructure_type_id', $type);
+        if ($status = $request->input('status')) $query->where('status', $status);
+        if ($zone = $request->input('zone_id')) $query->where('zone_id', $zone);
+        if ($manager = $request->input('manager_user_id')) $query->where('manager_user_id', $manager);
+        if ($from = $request->input('from')) $query->whereDate('created_at', '>=', $from);
+        if ($to = $request->input('to')) $query->whereDate('created_at', '<=', $to);
+        return $query->orderByDesc('id')->get();
+    }
+
+    public function chantiersPdf(Request $request)
+    {
+        $this->authorize('viewAny', Chantier::class);
+        $chantiers = $this->filteredChantiers($request);
+        $pdf = Pdf::loadView('exports.chantiers', ['chantiers' => $chantiers]);
+        return $pdf->download('chantiers.pdf');
+    }
+
+    public function chantiersExcel(Request $request)
+    {
+        $this->authorize('viewAny', Chantier::class);
+        $chantiers = $this->filteredChantiers($request);
+        return Excel::download(new ChantiersExport($chantiers), 'chantiers.xlsx');
     }
 }
