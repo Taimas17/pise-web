@@ -7,6 +7,8 @@ use App\Http\Controllers\InfrastructureTypeController;
 use App\Http\Controllers\ZoneController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\AuditController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
@@ -24,6 +26,7 @@ Route::post('/reports/{report}/photos', [ReportController::class, 'uploadPhotos'
 
 Route::get('/reports', [ReportController::class, 'index'])->middleware(['auth:sanctum','can:viewAny,App\\Models\\Report']);
 Route::get('/reports/{report}', [ReportController::class, 'show'])->middleware(['auth:sanctum','can:view,report']);
+Route::get('/reports/{report}/audit', [ReportController::class, 'audit'])->middleware(['auth:sanctum','can:view,report']);
 Route::patch('/reports/{report}', [ReportController::class, 'update'])->middleware(['auth:sanctum','can:update,report']);
 Route::post('/reports/{report}/review', [ReportController::class, 'review'])->middleware(['auth:sanctum','can:review,report']);
 Route::post('/reports/{report}/assign', [ReportController::class, 'assign'])->middleware(['auth:sanctum','can:assign,report']);
@@ -33,7 +36,15 @@ Route::apiResource('infrastructure-types', InfrastructureTypeController::class)-
 
 Route::get('/zones', [ZoneController::class, 'index'])->middleware('auth:sanctum');
 Route::post('/zones', [ZoneController::class, 'store'])->middleware(['auth:sanctum','role:admin']);
+Route::patch('/zones/{zone}', [ZoneController::class, 'update'])->middleware(['auth:sanctum','role:admin']);
+Route::delete('/zones/{zone}', [ZoneController::class, 'destroy'])->middleware(['auth:sanctum','role:admin']);
 Route::post('/zones/import', [ZoneController::class, 'importGeoJson'])->middleware(['auth:sanctum','role:admin']);
 
 Route::get('/exports/reports.pdf', [ExportController::class, 'reportsPdf'])->middleware(['auth:sanctum','can:export,App\\Models\\Report']);
 Route::get('/exports/reports.xlsx', [ExportController::class, 'reportsExcel'])->middleware(['auth:sanctum','can:export,App\\Models\\Report']);
+Route::get('/exports/reports.geojson', [ExportController::class, 'reportsGeojson'])->middleware(['auth:sanctum','can:export,App\\Models\\Report']);
+
+Route::get('/users', [UserController::class, 'index'])->middleware(['auth:sanctum','role:admin']);
+Route::patch('/users/{user}/role', [UserController::class, 'updateRole'])->middleware(['auth:sanctum','role:admin']);
+
+Route::get('/audit/logs', [AuditController::class, 'logs'])->middleware(['auth:sanctum','role:admin']);

@@ -28,6 +28,27 @@ class ZoneController extends Controller
         return response()->json($zone, 201);
     }
 
+    public function update(Request $request, Zone $zone)
+    { $this->authorize('update', $zone);
+        $data = $request->validate([
+            'name' => ['sometimes','string','max:255'],
+            'properties' => ['sometimes','array'],
+        ]);
+        $zone->fill($data);
+        $zone->save();
+        return $zone;
+    }
+
+    public function destroy(Request $request, Zone $zone)
+    { $this->authorize('delete', $zone);
+        try {
+            $zone->delete();
+        } catch (\Throwable $e) {
+            return response()->json(['message' => 'Suppression impossible: zone utilisée'], 409);
+        }
+        return response()->noContent();
+    }
+
     public function importGeoJson(Request $request)
     { $this->authorize('import', \App\Models\Zone::class);
         $request->validate(['file' => ['required','file','mimetypes:application/json,application/geo+json']]);
