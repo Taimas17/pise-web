@@ -7,6 +7,8 @@ import Admin from "./pages/Admin";
 import Account from "./pages/Account";
 import { Toaster } from "./components/ui/sonner";
 import { Button } from "./components/ui/button";
+import ChantiersList from "./pages/ChantiersList";
+import ChantierDetail from "./pages/ChantierDetail";
 
 export default function App() {
   return (
@@ -18,6 +20,7 @@ export default function App() {
             <nav className="flex items-center gap-4 text-sm">
               <NavLink to="/signaler" className={({isActive})=>isActive?"text-sky-700 font-medium":"text-gray-600 hover:text-gray-900"}>Signaler</NavLink>
               <NavLink to="/suivi" className={({isActive})=>isActive?"text-sky-700 font-medium":"text-gray-600 hover:text-gray-900"}>Suivi</NavLink>
+              <NavLink to="/chantiers" className={({isActive})=>isActive?"text-sky-700 font-medium":"text-gray-600 hover:text-gray-900"}>Chantiers</NavLink>
               <NavLink to="/dashboard" className={({isActive})=>isActive?"text-sky-700 font-medium":"text-gray-600 hover:text-gray-900"}>Tableau de bord</NavLink>
               <NavLink to="/admin" className={({isActive})=>isActive?"text-sky-700 font-medium":"text-gray-600 hover:text-gray-900"}>Admin</NavLink>
               <NavLink to="/compte" className={({isActive})=>isActive?"text-sky-700 font-medium":"text-gray-600 hover:text-gray-900"}>Compte</NavLink>
@@ -30,6 +33,8 @@ export default function App() {
             <Route path="/signaler" element={<SignalementForm />} />
             <Route path="/suivi" element={<ReportsList />} />
             <Route path="/suivi/:id" element={<ReportDetail />} />
+            <Route path="/chantiers" element={<ChantiersList />} />
+            <Route path="/chantiers/:id" element={<ChantierDetail />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/compte" element={<Account />} />

@@ -17,6 +17,9 @@ Backend (`/backend/.env`)
 - REPORTS_RATE_LIMIT_PER_HOUR=200
 - COLUMN_ENCRYPTION_KEY=base64:… (clé AES 256)
 - KOBO_BASE_URL, KOBO_TOKEN, KOBO_FORM_IDS
+- ATTACHMENTS_MAX_MB (optionnel, défaut 10) — taille max d’upload des pièces jointes
+- ATTACHMENTS_ALLOWED_MIME (optionnel) — liste CSV des types MIME permis
+- ATTACHMENTS_CATEGORIES=contrat,OS,PV_reception,photo,autre
 
 Frontend (`/web/.env`)
 - VITE_API_URL=http://api.pise.local
