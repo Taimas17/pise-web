@@ -172,24 +172,155 @@ paths:
       responses:
         '200': { description: OK }
       security: [ { cookieAuth: [] } ]
-  /infrastructure-types:
+  /reports/stats/overview:
     get:
-      summary: Lister types d'infrastructure
-      responses: { '200': { description: OK } }
+      summary: Vue d'ensemble SLA
+      parameters:
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+        - in: query
+          name: zone_id
+          schema: { type: integer }
+        - in: query
+          name: type_id
+          schema: { type: integer }
+        - in: query
+          name: agent_id
+          schema: { type: integer }
+        - in: query
+          name: criticality
+          schema: { type: string, enum: [faible,moyenne,haute] }
+        - in: query
+          name: status
+          schema: { type: string, enum: [draft,pending_review,assigned,resolved,rejected] }
+      responses:
+        '200': { description: OK }
       security: [ { cookieAuth: [] } ]
-    post:
-      summary: Créer type
-      responses: { '201': { description: Créé } }
+  /reports/stats/breakdown:
+    get:
+      summary: Répartition par type, zone ou agent
+      parameters:
+        - in: query
+          name: group_by
+          schema: { type: string, enum: [type,zone,agent] }
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+        - in: query
+          name: zone_id
+          schema: { type: integer }
+        - in: query
+          name: type_id
+          schema: { type: integer }
+        - in: query
+          name: agent_id
+          schema: { type: integer }
+        - in: query
+          name: criticality
+          schema: { type: string, enum: [faible,moyenne,haute] }
+        - in: query
+          name: status
+          schema: { type: string, enum: [draft,pending_review,assigned,resolved,rejected] }
+      responses:
+        '200': { description: OK }
       security: [ { cookieAuth: [] } ]
-  /zones:
-    get: { summary: Lister zones, responses: { '200': { description: OK } }, security: [ { cookieAuth: [] } ] }
-    post: { summary: Créer zone, responses: { '201': { description: Créé } }, security: [ { cookieAuth: [] } ] }
-  /zones/import:
-    post: { summary: Import GeoJSON, responses: { '201': { description: Import ok } }, security: [ { cookieAuth: [] } ] }
-  /exports/reports.pdf:
-    get: { summary: Export PDF, responses: { '200': { description: Fichier PDF } }, security: [ { cookieAuth: [] } ] }
-  /exports/reports.xlsx:
-    get: { summary: Export Excel, responses: { '200': { description: Fichier Excel } }, security: [ { cookieAuth: [] } ] }
+  /reports/stats/trends:
+    get:
+      summary: Tendances temporelles
+      parameters:
+        - in: query
+          name: interval
+          schema: { type: string, enum: [daily,weekly,monthly] }
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+        - in: query
+          name: zone_id
+          schema: { type: integer }
+        - in: query
+          name: type_id
+          schema: { type: integer }
+        - in: query
+          name: agent_id
+          schema: { type: integer }
+        - in: query
+          name: criticality
+          schema: { type: string, enum: [faible,moyenne,haute] }
+        - in: query
+          name: status
+          schema: { type: string, enum: [draft,pending_review,assigned,resolved,rejected] }
+      responses:
+        '200': { description: OK }
+      security: [ { cookieAuth: [] } ]
+  /reports/sla/summary:
+    get:
+      summary: Résumé des SLA
+      parameters:
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+        - in: query
+          name: zone_id
+          schema: { type: integer }
+        - in: query
+          name: type_id
+          schema: { type: integer }
+        - in: query
+          name: agent_id
+          schema: { type: integer }
+        - in: query
+          name: criticality
+          schema: { type: string, enum: [faible,moyenne,haute] }
+        - in: query
+          name: status
+          schema: { type: string, enum: [draft,pending_review,assigned,resolved,rejected] }
+      responses:
+        '200': { description: OK }
+      security: [ { cookieAuth: [] } ]
+  /reports/sla/breakdown:
+    get:
+      summary: Répartition SLA
+      parameters:
+        - in: query
+          name: group_by
+          schema: { type: string, enum: [type,zone,agent] }
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+        - in: query
+          name: zone_id
+          schema: { type: integer }
+        - in: query
+          name: type_id
+          schema: { type: integer }
+        - in: query
+          name: agent_id
+          schema: { type: integer }
+        - in: query
+          name: criticality
+          schema: { type: string, enum: [faible,moyenne,haute] }
+        - in: query
+          name: status
+          schema: { type: string, enum: [draft,pending_review,assigned,resolved,rejected] }
+      responses:
+        '200': { description: OK }
+      security: [ { cookieAuth: [] } ]
 
 components:
   securitySchemes:
