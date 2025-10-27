@@ -7,6 +7,7 @@ use App\Http\Controllers\InfrastructureTypeController;
 use App\Http\Controllers\ZoneController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\AnalyticsController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
@@ -28,6 +29,18 @@ Route::patch('/reports/{report}', [ReportController::class, 'update'])->middlewa
 Route::post('/reports/{report}/review', [ReportController::class, 'review'])->middleware(['auth:sanctum','can:review,report']);
 Route::post('/reports/{report}/assign', [ReportController::class, 'assign'])->middleware(['auth:sanctum','can:assign,report']);
 Route::get('/reports/stats', [DashboardController::class, 'stats'])->middleware(['auth:sanctum','can:stats,App\\Models\\Report']);
+
+Route::prefix('reports')->middleware(['auth:sanctum','can:stats,App\\Models\\Report'])->group(function(){
+    Route::prefix('stats')->group(function(){
+        Route::get('/overview', [AnalyticsController::class, 'overview']);
+        Route::get('/breakdown', [AnalyticsController::class, 'breakdown']);
+        Route::get('/trends', [AnalyticsController::class, 'trends']);
+    });
+    Route::prefix('sla')->group(function(){
+        Route::get('/summary', [AnalyticsController::class, 'slaSummary']);
+        Route::get('/breakdown', [AnalyticsController::class, 'slaBreakdown']);
+    });
+});
 
 Route::apiResource('infrastructure-types', InfrastructureTypeController::class)->middleware('auth:sanctum');
 

@@ -6,6 +6,7 @@ use App\Casts\Encrypted;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class Report extends Model
 {
@@ -39,6 +40,8 @@ class Report extends Model
                 $report->setLocationFromLatLng($lat, $lng);
             }
         });
+        static::created(function(){ Cache::increment('analytics_version'); });
+        static::updated(function(){ Cache::increment('analytics_version'); });
     }
 
     public function setLocationFromLatLng(float $lat, float $lng): void
