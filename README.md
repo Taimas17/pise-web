@@ -6,6 +6,10 @@ Monorepo pour le pilote PISE (inclusion sociale et économique)
 - web/ — PWA React (Vite + TypeScript)
 - docs/ — OpenAPI, ADRs, schéma de données, etc.
 
+## Windows (native) quickstart
+
+For a localhost setup on Windows without WSL or Docker, see `docs/LOCAL-SETUP-WINDOWS.md`.
+
 ## Démarrage local (résumé)
 
 1) Backend (API)
