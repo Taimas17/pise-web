@@ -11,7 +11,7 @@ export function useAuth(){
     try {
       const { data } = await api.get('/auth/me');
       setUser(data);
-    } catch {}
+    } catch { void 0 }
     finally { setLoading(false); }
   })(); },[]);
 

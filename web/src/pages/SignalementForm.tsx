@@ -17,7 +17,7 @@ export default function SignalementForm(){
   const [form, setForm] = useState({ infrastructure_type_id: '', criticality: 'moyenne', description: '', public_location: false, citizen_email: '', citizen_phone: '' });
 
   useEffect(()=>{ (async()=>{
-    try { const { data } = await api.get('/infrastructure-types'); setTypes(data); } catch {}
+    try { const { data } = await api.get('/infrastructure-types'); setTypes(data); } catch { void 0 }
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(pos => { setLat(pos.coords.latitude); setLng(pos.coords.longitude); }, ()=>{}, { enableHighAccuracy: true });
     }

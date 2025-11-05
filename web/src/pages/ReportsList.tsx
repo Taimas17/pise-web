@@ -18,7 +18,7 @@ const [quartiers, setQuartiers] = useState<any[]>([]);
     const { data } = await api.get('/reports', { params });
     setReports(data.data || data);
   }
-  useEffect(()=>{ (async()=>{ try{ const {data} = await api.get('/infrastructure-types'); setTypes(data); const { data: com } = await api.get('/zones', { params: { level: 'commune' } }); setCommunes(com); }catch{} })(); },[]);
+  useEffect(()=>{ (async()=>{ try{ const {data} = await api.get('/infrastructure-types'); setTypes(data); const { data: com } = await api.get('/zones', { params: { level: 'commune' } }); setCommunes(com); }catch{ void 0 } })(); },[]);
 useEffect(()=>{ (async()=>{ if(filters.commune_id){ const { data } = await api.get('/zones', { params: { level: 'arrondissement', parent_id: filters.commune_id } }); setArrondissements(data); setQuartiers([]); } else { setArrondissements([]); setQuartiers([]);} })(); }, [filters.commune_id]);
 useEffect(()=>{ (async()=>{ if(filters.arrondissement_id){ const { data } = await api.get('/zones', { params: { level: 'quartier', parent_id: filters.arrondissement_id } }); setQuartiers(data); } else { setQuartiers([]);} })(); }, [filters.arrondissement_id]);
   useEffect(()=>{ load(); }, [filters]);

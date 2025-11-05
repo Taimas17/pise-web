@@ -26,7 +26,7 @@ export default function ChantierDetail(){
     setChantier(data);
   }
 
-  useEffect(()=>{ (async()=>{ try{ const {data} = await api.get('/infrastructure-types'); setTypes(data); }catch{} })(); },[]);
+  useEffect(()=>{ (async()=>{ try{ const {data} = await api.get('/infrastructure-types'); setTypes(data); }catch{ void 0 } })(); },[]);
   useEffect(()=>{ load(); }, [id, refreshKey]);
 
   if (!chantier) return <div>Chargement…</div>;

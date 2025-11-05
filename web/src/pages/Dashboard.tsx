@@ -14,7 +14,7 @@ const [types, setTypes] = useState<any[]>([]);
   async function load(){ const { data } = await api.get('/reports/stats', { params: { } }); setStats(data); }
 async function loadReports(){ const from = new Date(); from.setDate(from.getDate() - Number(period) + 1); const { data } = await api.get('/reports', { params: { from: from.toISOString().slice(0,10) } }); setReports(data.data || data); }
   useEffect(()=>{ load(); },[]);
-  useEffect(()=>{ (async()=>{ try{ const { data } = await api.get('/infrastructure-types'); setTypes(data); } catch {} })(); },[]);
+  useEffect(()=>{ (async()=>{ try{ const { data } = await api.get('/infrastructure-types'); setTypes(data); } catch { void 0 } })(); },[]);
 useEffect(()=>{ loadReports(); }, [period]);
 
   if (!stats) return <p>Chargement…</p>;
