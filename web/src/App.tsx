@@ -17,6 +17,9 @@ import { useIsMobile } from "./hooks/use-mobile";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./components/ui/sheet";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "next-themes";
+import FiltersExample from "./pages/examples/FiltersExample";
+import StatsExample from "./pages/examples/StatsExample";
+import TableExample from "./pages/examples/TableExample";
 
 const navItems = [
   { to: "/signaler", label: "Signaler" },
@@ -157,6 +160,10 @@ export default function App() {
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/admin" element={<Admin />} />
                   <Route path="/compte" element={<Account />} />
+                  {/* Examples (stories) */}
+                  <Route path="/examples/filters" element={<FiltersExample />} />
+                  <Route path="/examples/stats" element={<StatsExample />} />
+                  <Route path="/examples/table" element={<TableExample />} />
                 </Routes>
               </main>
               <footer className="border-t text-center text-sm text-gray-500 py-4">© {new Date().getFullYear()} PISE</footer>
