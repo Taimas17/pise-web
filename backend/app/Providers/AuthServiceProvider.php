@@ -9,6 +9,7 @@ use App\Models\Chantier;
 use App\Models\Lot;
 use App\Models\Etape;
 use App\Models\Expense;
+use App\Models\User;
 use App\Policies\InfrastructureTypePolicy;
 use App\Policies\ReportPolicy;
 use App\Policies\ZonePolicy;
@@ -16,6 +17,7 @@ use App\Policies\ChantierPolicy;
 use App\Policies\LotPolicy;
 use App\Policies\EtapePolicy;
 use App\Policies\ExpensePolicy;
+use App\Policies\UserPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
 class AuthServiceProvider extends ServiceProvider
@@ -28,6 +30,7 @@ class AuthServiceProvider extends ServiceProvider
         Lot::class => LotPolicy::class,
         Etape::class => EtapePolicy::class,
         Expense::class => ExpensePolicy::class,
+        User::class => UserPolicy::class,
     ];
 
     public function boot(): void

@@ -27,3 +27,11 @@ Zones (Zone)
 Notes
 - Les PII (email, téléphone) et coordonnées précises sont chiffrées et non exposées dans les payloads.
 - Les endpoints sensibles utilisent des Policies Laravel et le middleware `can:` pour une protection fine.
+
+Utilisateurs (User)
+- Lister (viewAny): admin
+- Voir (view): soi-même ou admin
+- Créer (create): admin
+- Modifier (update): soi-même (sauf champ `role`) ou admin
+- Supprimer (delete): admin (sauf soi-même)
+

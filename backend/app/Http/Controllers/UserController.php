@@ -10,7 +10,7 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $this->authorizeAction($request);
+        $this->authorize('viewAny', User::class);
         $q = trim((string)$request->input('q'));
         $role = $request->input('role');
         $users = User::query()
@@ -23,7 +23,7 @@ class UserController extends Controller
 
     public function updateRole(Request $request, User $user)
     {
-        $this->authorizeAction($request);
+        $this->authorize('update', $user);
         $data = $request->validate(['role' => ['required','in:admin,moderator,agent,citizen']]);
         $old = $user->role;
         $user->role = $data['role'];
@@ -38,8 +38,5 @@ class UserController extends Controller
         return $user;
     }
 
-    private function authorizeAction(Request $request): void
-    {
-        if (!$request->user() || $request->user()->role !== 'admin') abort(403);
-    }
+
 }
