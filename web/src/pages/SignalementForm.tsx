@@ -10,31 +10,42 @@ import { set, get } from 'idb-keyval';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Skeleton } from "../components/ui/skeleton";
 import { FileText, Image as ImageIcon, MapPin } from "lucide-react";
+import type { Coordinates } from "../types/geo";
+import type { InfrastructureType, ReportCreatePayload } from "../types/api";
+import { isValidCoordinates } from "../lib/geo-utils";
 
 export default function SignalementForm(){
-  const [lat, setLat] = useState<number | null>(null);
-  const [lng, setLng] = useState<number | null>(null);
-  const [types, setTypes] = useState<any[]>([]);
+  const [coordinates, setCoordinates] = useState<Coordinates | null>(null);
+  const [types, setTypes] = useState<InfrastructureType[]>([]);
   const [files, setFiles] = useState<File[]>([]);
   const [sending, setSending] = useState(false);
-  const [form, setForm] = useState({ infrastructure_type_id: '', criticality: 'moyenne', description: '', public_location: false, citizen_email: '', citizen_phone: '' });
+  const [form, setForm] = useState<Pick<ReportCreatePayload,'infrastructure_type_id'|'criticality'|'description'|'public_location'|'citizen_email'|'citizen_phone'>>({
+    infrastructure_type_id: '',
+    criticality: 'moyenne',
+    description: '',
+    public_location: false,
+    citizen_email: '',
+    citizen_phone: ''
+  });
 
   useEffect(()=>{ (async()=>{
     try { const { data } = await api.get('/infrastructure-types'); setTypes(data); } catch {}
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(pos => { setLat(pos.coords.latitude); setLng(pos.coords.longitude); }, ()=>{}, { enableHighAccuracy: true });
+      navigator.geolocation.getCurrentPosition(pos => {
+        setCoordinates({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      }, ()=>{}, { enableHighAccuracy: true });
     }
   })(); },[]);
 
   async function onSubmit(){
-    if (lat == null || lng == null) { toast('Localisation non disponible'); return; }
+    if (!coordinates || !isValidCoordinates(coordinates)) { toast('Localisation invalide'); return; }
     setSending(true);
     const data = new FormData();
-    data.append('infrastructure_type_id', form.infrastructure_type_id);
+    data.append('infrastructure_type_id', String(form.infrastructure_type_id));
     data.append('criticality', form.criticality);
     if (form.description) data.append('description', form.description);
-    data.append('lat', String(lat));
-    data.append('lng', String(lng));
+    data.append('lat', String(coordinates.lat));
+    data.append('lng', String(coordinates.lng));
     data.append('public_location', String(form.public_location));
     if (form.citizen_email) data.append('citizen_email', form.citizen_email);
     if (form.citizen_phone) data.append('citizen_phone', form.citizen_phone);
@@ -74,7 +85,7 @@ export default function SignalementForm(){
     return ()=> clearInterval(iv);
   },[]);
 
-  if (lat == null || lng == null) return <p>Chargement de la géolocalisation…</p>;
+  if (!coordinates) return <p>Chargement de la géolocalisation…</p>;
 
   return (
     <div className="grid gap-4 max-w-2xl">
@@ -91,7 +102,7 @@ export default function SignalementForm(){
         <CardContent className="grid gap-4 pt-4">
           <label className="grid gap-2">
             <span>Type d’infrastructure</span>
-            <Select value={form.infrastructure_type_id} onValueChange={(v)=>setForm(f=>({ ...f, infrastructure_type_id: v }))}>
+            <Select value={String(form.infrastructure_type_id)} onValueChange={(v)=>setForm(f=>({ ...f, infrastructure_type_id: v }))}>
               <SelectTrigger><SelectValue placeholder="Choisir…"/></SelectTrigger>
               <SelectContent>
                 {types.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}
@@ -100,7 +111,7 @@ export default function SignalementForm(){
           </label>
           <label className="grid gap-2">
             <span>Criticité</span>
-            <select className="border rounded p-2" value={form.criticality} onChange={e=>setForm(f=>({ ...f, criticality: e.target.value }))}>
+            <select className="border rounded p-2" value={form.criticality} onChange={e=>setForm(f=>({ ...f, criticality: e.target.value as ReportCreatePayload['criticality'] }))}>
               <option value="faible">Faible</option>
               <option value="moyenne">Moyenne</option>
               <option value="haute">Haute</option>
@@ -119,7 +130,7 @@ export default function SignalementForm(){
           <CardDescription>Déplacez le marqueur pour ajuster</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 pt-4">
-          <Map lat={lat} lng={lng} onPick={(la,lo)=>{ setLat(la); setLng(lo); }} className="h-[250px] md:h-[350px]"/>
+          <Map lat={coordinates.lat} lng={coordinates.lng} onPick={(la,lo)=> setCoordinates({ lat: la, lng: lo })} className="h-[250px] md:h-[350px]"/>
           <label className="flex items-center gap-2 text-sm">
             <input id="pub" type="checkbox" checked={form.public_location} onChange={e=>setForm(f=>({ ...f, public_location: e.target.checked }))} />
             <span>Utiliser la précision exacte (sinon position masquée)</span>

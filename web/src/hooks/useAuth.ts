@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { api, sanctumCsrf } from "../lib/api";
-
-export type User = { id: number; name: string; email: string; role: 'admin'|'moderator'|'agent'|'citizen' } | null;
+import type { User as ApiUser } from "../types/api";
 
 export function useAuth(){
-  const [user, setUser] = useState<User>(null);
+  const [user, setUser] = useState<ApiUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(()=>{ (async()=>{
