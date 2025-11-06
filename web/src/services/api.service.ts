@@ -117,7 +117,7 @@ export const apiService = {
     updateRole: async (id: number, role: User['role']) => { await sanctumCsrf(); return api.put<User>(`/users/${id}/role`, { role }).then(r => r.data); },
   },
   dashboard: {
-    stats: (params: Record<string, unknown> = {}) => withRetry(() => api.get<any>(`/dashboard/stats${buildQuery(params)}`).then(r => r.data)),
+    stats: (params: Record<string, unknown> = {}) => withRetry(() => api.get<any>(`/reports/stats${buildQuery(params)}`).then(r => r.data)),
   },
   exports: {
     pdf: (params: Record<string, unknown> = {}) => api.get<Blob>(`/exports/pdf${buildQuery(params)}`, { responseType: 'blob' }).then(r => r.data),
