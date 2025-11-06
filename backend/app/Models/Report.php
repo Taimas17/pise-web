@@ -6,6 +6,7 @@ use App\Casts\Encrypted;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use App\Services\GeometryService;
 
 class Report extends Model
 {
@@ -47,7 +48,8 @@ class Report extends Model
 
     public function setLocationFromLatLng(float $lat, float $lng): void
     {
-        $this->attributes['location'] = DB::raw("ST_SRID(Point($lng, $lat), 4326)");
+        $geo = app(GeometryService::class)->createPoint((float)$lng, (float)$lat);
+        $this->attributes['location'] = DB::raw(DB::getPdo()->quote($geo));
     }
 
     public function type() { return $this->belongsTo(InfrastructureType::class, 'infrastructure_type_id'); }

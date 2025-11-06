@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Enum;
+use Illuminate\Validation\ValidationException;
 use Intervention\Image\Laravel\Facades\Image;
 
 class ReportController extends Controller
@@ -78,6 +79,12 @@ class ReportController extends Controller
 
         $lat = round((float)$data['lat'], 6);
         $lng = round((float)$data['lng'], 6);
+        if ($lat < -90 || $lat > 90 || $lng < -180 || $lng > 180) {
+            throw ValidationException::withMessages([
+                'lat' => 'Coordonnées invalides',
+                'lng' => 'Coordonnées invalides',
+            ]);
+        }
 
         $report = new Report();
         $report->fill([
