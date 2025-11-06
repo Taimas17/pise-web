@@ -13,6 +13,14 @@ use App\Http\Controllers\IntegrationController;
 use App\Http\Controllers\ChantierController;
 use App\Http\Controllers\MetricsController;
 
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'ok',
+        'timestamp' => now()->toIso8601String(),
+        'environment' => app()->environment(),
+    ]);
+});
+
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);

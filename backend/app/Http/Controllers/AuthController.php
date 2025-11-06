@@ -17,6 +17,12 @@ class AuthController extends Controller
             'email' => ['required','email','max:255','unique:users,email'],
             'password' => ['required', Password::defaults()],
             'phone' => ['nullable','string','max:255'],
+        ], [
+            'name.required' => 'Le nom est requis',
+            'email.required' => "L'email est requis",
+            'email.email' => "Format d'email invalide",
+            'email.unique' => 'Cet email est déjà utilisé',
+            'password.required' => 'Le mot de passe est requis',
         ]);
 
         $user = User::create([
@@ -40,7 +46,12 @@ class AuthController extends Controller
         ]);
 
         if (!Auth::attempt($credentials, true)) {
-            return response()->json(['message' => 'Identifiants invalides'], 422);
+            return response()->json([
+                'message' => 'Email ou mot de passe incorrect',
+                'errors' => [
+                    'email' => ['Ces identifiants ne correspondent à aucun compte']
+                ]
+            ], 422);
         }
 
         $request->session()->regenerate();
