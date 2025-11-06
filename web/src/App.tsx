@@ -23,6 +23,7 @@ import TableExample from "./pages/examples/TableExample";
 import ChartsExample from "./pages/examples/ChartsExample";
 import DialogsExample from "./pages/examples/DialogsExample";
 import SectionsExample from "./pages/examples/SectionsExample";
+import ThemeToggle from "./components/ThemeToggle";
 
 const navItems = [
   { to: "/signaler", label: "Signaler" },
@@ -147,8 +148,9 @@ export default function App() {
                     <MobileNav />
                   </div>
                   <Link to="/" className="text-responsive-h2 text-sky-600 tracking-tight">PISE</Link>
-                  <div className="ml-auto">
+                  <div className="ml-auto flex items-center gap-2">
                     {isMobile ? null : <DesktopNav />}
+                    <ThemeToggle variant="switch" />
                   </div>
                 </div>
               </header>

@@ -1,68 +1,23 @@
-import { useState } from "react";
-import { useAuth } from "../hooks/useAuth";
+import { useEffect, useState } from "react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-
-type Mode = "login" | "register";
-
-type FieldKey = "name" | "email" | "password";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { loginSchema, registerSchema } from "@/lib/validation/auth.schemas";
+import { useLogin, useMe, useRegister, useLogout } from "@/hooks/api/useAuth";
+import { useAuthStore } from "@/stores/useAuthStore";
 
 export default function Account() {
-  const { user, login, register, logout, loading: authLoading, error: authError } = useAuth();
-  const [mode, setMode] = useState<Mode>("login");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false);
+  const [mode, setMode] = useState<"login" | "register">("login");
+  const { data: me } = useMe();
+  const user = useAuthStore(s => s.user);
+  const { mutate: doLogin, isPending: loginPending } = useLogin();
+  const { mutate: doRegister, isPending: registerPending } = useRegister();
+  const { mutate: doLogout, isPending: logoutPending } = useLogout();
 
-  const clearFieldError = (field: FieldKey) => {
-    setErrors((previous) => {
-      if (!previous[field]) {
-        return previous;
-      }
-      const { [field]: _removed, ...rest } = previous;
-      return rest;
-    });
-  };
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    if (!email.includes("@")) newErrors.email = "Email invalide";
-    if (password.length < 8) newErrors.password = "Minimum 8 caractères";
-    if (mode === "register" && !name.trim()) newErrors.name = "Nom requis";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleLogin = async () => {
-    if (!validateForm()) return;
-    setIsLoading(true);
-    try {
-      await login(email, password);
-    } catch {
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleRegister = async () => {
-    if (!validateForm()) return;
-    setIsLoading(true);
-    try {
-      await register({ name, email, password, phone });
-    } catch {
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleModeChange = (nextMode: Mode) => {
-    setMode(nextMode);
-    setErrors({});
-  };
+  useEffect(() => { /* ensures store sync via useMe */ }, []);
 
   if (user) {
     return (
@@ -83,8 +38,8 @@ export default function Account() {
               </div>
             </div>
             <div className="mt-4">
-              <Button variant="outline" onClick={() => logout()} disabled={authLoading}>
-                {authLoading ? "Déconnexion…" : "Se déconnecter"}
+              <Button variant="outline" onClick={() => doLogout()} disabled={logoutPending}>
+                {logoutPending ? "Déconnexion…" : "Se déconnecter"}
               </Button>
             </div>
           </CardContent>
@@ -100,78 +55,53 @@ export default function Account() {
           <CardTitle>Compte</CardTitle>
           <CardDescription>Connexion ou inscription citoyen</CardDescription>
         </CardHeader>
-        <CardContent className="pt-4 grid gap-3">
+        <CardContent className="pt-4 grid gap-4">
           <div className="flex gap-2 text-sm">
-            <button
-              type="button"
-              className={mode === "login" ? "font-semibold" : "text-gray-500"}
-              onClick={() => handleModeChange("login")}
-            >
-              Connexion
-            </button>
-            <button
-              type="button"
-              className={mode === "register" ? "font-semibold" : "text-gray-500"}
-              onClick={() => handleModeChange("register")}
-            >
-              Inscription citoyen
-            </button>
+            <button type="button" className={mode === "login" ? "font-semibold" : "text-gray-500"} onClick={() => setMode("login")}>Connexion</button>
+            <button type="button" className={mode === "register" ? "font-semibold" : "text-gray-500"} onClick={() => setMode("register")}>Inscription citoyen</button>
           </div>
-          {mode === "register" && (
-            <div>
-              <Input
-                placeholder="Nom"
-                value={name}
-                onChange={(event) => {
-                  setName(event.target.value);
-                  clearFieldError("name");
-                }}
-              />
-              {errors.name && <div className="text-sm text-red-600 mt-1">{errors.name}</div>}
-            </div>
-          )}
-          <div>
-            <Input
-              placeholder="Email"
-              value={email}
-              onChange={(event) => {
-                setEmail(event.target.value);
-                clearFieldError("email");
-              }}
-            />
-            {errors.email && <div className="text-sm text-red-600 mt-1">{errors.email}</div>}
-          </div>
-          <div>
-            <Input
-              placeholder="Mot de passe"
-              type="password"
-              value={password}
-              onChange={(event) => {
-                setPassword(event.target.value);
-                clearFieldError("password");
-              }}
-            />
-            {errors.password && <div className="text-sm text-red-600 mt-1">{errors.password}</div>}
-          </div>
-          {mode === "register" && (
-            <Input
-              placeholder="Téléphone (optionnel)"
-              value={phone}
-              onChange={(event) => setPhone(event.target.value)}
-            />
-          )}
-          {authError && <div className="text-sm text-red-600">{authError}</div>}
-          {mode === "login" ? (
-            <Button onClick={handleLogin} disabled={isLoading || authLoading} className="touch-target">
-              {isLoading || authLoading ? "Connexion…" : "Connexion"}
-            </Button>
-          ) : (
-            <Button onClick={handleRegister} disabled={isLoading || authLoading} className="touch-target">
-              {isLoading || authLoading ? "Inscription…" : "Inscription"}
-            </Button>
-          )}
+          {mode === 'login' ? <LoginForm onSubmit={(v) => doLogin(v)} loading={loginPending} /> : <RegisterForm onSubmit={(v) => doRegister(v)} loading={registerPending} />}
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function LoginForm({ onSubmit, loading }: { onSubmit: (v: z.infer<typeof loginSchema>) => void; loading?: boolean }){
+  const form = useForm<z.infer<typeof loginSchema>>({ resolver: zodResolver(loginSchema), defaultValues: { email: '', password: '' } });
+  return (
+    <form className="grid gap-3" onSubmit={form.handleSubmit(onSubmit)}>
+      <div>
+        <Input placeholder="Email" {...form.register('email')} />
+        {form.formState.errors.email && <div className="text-sm text-red-600 mt-1">{form.formState.errors.email.message}</div>}
+      </div>
+      <div>
+        <Input placeholder="Mot de passe" type="password" {...form.register('password')} />
+        {form.formState.errors.password && <div className="text-sm text-red-600 mt-1">{form.formState.errors.password.message}</div>}
+      </div>
+      <Button type="submit" disabled={loading} className="touch-target">{loading ? 'Connexion…' : 'Connexion'}</Button>
+    </form>
+  );
+}
+
+function RegisterForm({ onSubmit, loading }: { onSubmit: (v: z.infer<typeof registerSchema>) => void; loading?: boolean }){
+  const form = useForm<z.infer<typeof registerSchema>>({ resolver: zodResolver(registerSchema), defaultValues: { name: '', email: '', password: '', phone: '' } });
+  return (
+    <form className="grid gap-3" onSubmit={form.handleSubmit(onSubmit)}>
+      <div>
+        <Input placeholder="Nom" {...form.register('name')} />
+        {form.formState.errors.name && <div className="text-sm text-red-600 mt-1">{form.formState.errors.name.message}</div>}
+      </div>
+      <div>
+        <Input placeholder="Email" {...form.register('email')} />
+        {form.formState.errors.email && <div className="text-sm text-red-600 mt-1">{form.formState.errors.email.message}</div>}
+      </div>
+      <div>
+        <Input placeholder="Mot de passe" type="password" {...form.register('password')} />
+        {form.formState.errors.password && <div className="text-sm text-red-600 mt-1">{form.formState.errors.password.message}</div>}
+      </div>
+      <Input placeholder="Téléphone (optionnel)" {...form.register('phone')} />
+      <Button type="submit" disabled={loading} className="touch-target">{loading ? 'Inscription…' : 'Inscription'}</Button>
+    </form>
   );
 }
