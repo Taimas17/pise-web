@@ -12,7 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from "./components/ui/alert";
 import { AlertCircle, Menu } from "lucide-react";
 import { api } from "./lib/api";
 import ChantiersList from "./pages/ChantiersList";
-import ChantierDetail from "./pages/ChantierDetail";
+import ChantierDetail from "./pages/chantiers/ChantierDetail";
 import { useIsMobile } from "./hooks/use-mobile";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./components/ui/sheet";
 import { AuthProvider } from "./contexts/AuthContext";
