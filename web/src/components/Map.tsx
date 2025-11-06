@@ -10,9 +10,9 @@ const icon = new L.Icon({
   iconSize: [25,41], iconAnchor: [12,41]
 });
 
-export default function Map({ lat, lng, onPick }: { lat: number; lng: number; onPick?: (lat:number, lng:number)=>void }){
+export default function Map({ lat, lng, onPick, className }: { lat: number; lng: number; onPick?: (lat:number, lng:number)=>void; className?: string }){
   return (
-    <MapContainer center={[lat,lng]} zoom={15} style={{height: 300, width: '100%'}}>
+    <MapContainer center={[lat,lng]} zoom={15} className={className || "h-[250px] md:h-[350px] w-full"} style={{height: '100%', width: '100%'}}>
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
       <Marker position={[lat,lng]} icon={icon} />
       {onPick && <PickMarker onPick={onPick} />}

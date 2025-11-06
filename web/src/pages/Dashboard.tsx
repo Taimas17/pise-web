@@ -4,18 +4,24 @@ import { Button } from "../components/ui/button";
 import { MapContainer, TileLayer, CircleMarker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid, Legend } from 'recharts';
+import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../components/ui/dropdown-menu";
+import { Download, TrendingUp, AlertTriangle, CheckCircle, Clock } from "lucide-react";
+import { useIsMobile } from "../hooks/use-mobile";
 
 export default function Dashboard(){
   const [stats, setStats] = useState<any>(null);
-const [period, setPeriod] = useState<'7'|'30'|'90'>('30');
-const [reports, setReports] = useState<any[]>([]);
-const [types, setTypes] = useState<any[]>([]);
+  const [period, setPeriod] = useState<'7'|'30'|'90'>('30');
+  const [reports, setReports] = useState<any[]>([]);
+  const [types, setTypes] = useState<any[]>([]);
 
   async function load(){ const { data } = await api.get('/reports/stats', { params: { } }); setStats(data); }
-async function loadReports(){ const from = new Date(); from.setDate(from.getDate() - Number(period) + 1); const { data } = await api.get('/reports', { params: { from: from.toISOString().slice(0,10) } }); setReports(data.data || data); }
+  async function loadReports(){ const from = new Date(); from.setDate(from.getDate() - Number(period) + 1); const { data } = await api.get('/reports', { params: { from: from.toISOString().slice(0,10) } }); setReports(data.data || data); }
   useEffect(()=>{ load(); },[]);
   useEffect(()=>{ (async()=>{ try{ const { data } = await api.get('/infrastructure-types'); setTypes(data); } catch {} })(); },[]);
-useEffect(()=>{ loadReports(); }, [period]);
+  useEffect(()=>{ loadReports(); }, [period]);
+
+  const isMobile = useIsMobile();
 
   if (!stats) return <p>Chargement…</p>;
 
@@ -27,25 +33,54 @@ useEffect(()=>{ loadReports(); }, [period]);
   const zoneQuart = (stats.by_zone?.quartier||[]).map((z:any)=>({ name: z.name, count: Number(z.count) }));
 
   const exportPdf = () => { window.open(`${API_URL}/api/exports/reports.pdf`, '_blank'); };
-
-const exportGeojson = () => { window.open(`${API_URL}/api/exports/reports.geojson`, '_blank'); };
+  const exportExcel = () => { window.open(`${API_URL}/api/exports/reports.xlsx`, '_blank'); };
+  const exportGeojson = () => { window.open(`${API_URL}/api/exports/reports.geojson`, '_blank'); };
   
-
   return (
     <div className="grid gap-6">
-      <h2 className="text-xl font-semibold">Tableau de bord</h2>
-      <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
-        <Kpi label="# signalements" value={stats.total_reports} />
-        <Kpi label="# résolus" value={stats.resolved_reports} />
-        <Kpi label="Taux de résolution" value={`${stats.resolution_rate}%`} />
-        <Kpi label="Délai résol. moyen (h)" value={stats.avg_resolution_hours} />
-        <Kpi label="Délai revue moyen (h)" value={stats.avg_review_hours} />
-        <Kpi label="Conformité SLA résol." value={`${stats.sla_compliance_rate}%`} />
-        <Kpi label="Conformité SLA revue" value={`${stats.review_sla_compliance_rate}%`} />
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <h2 className="text-responsive-h2">Tableau de bord</h2>
+        <div className="flex items-center gap-2">
+          <ToggleGroup type="single" value={period} onValueChange={(v:any)=> v && setPeriod(v)} variant="outline">
+            <ToggleGroupItem value="7">7 j</ToggleGroupItem>
+            <ToggleGroupItem value="30">30 j</ToggleGroupItem>
+            <ToggleGroupItem value="90">90 j</ToggleGroupItem>
+          </ToggleGroup>
+
+          {isMobile ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="touch-target"><Download className="mr-2 size-4"/>Exporter</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={exportPdf}>PDF</DropdownMenuItem>
+                <DropdownMenuItem onClick={exportExcel}>Excel</DropdownMenuItem>
+                <DropdownMenuItem onClick={exportGeojson}>GeoJSON</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <div className="hidden md:flex items-center gap-2">
+              <Button onClick={exportPdf}><Download className="mr-2 size-4"/>PDF</Button>
+              <Button variant="outline" onClick={exportExcel}>Excel</Button>
+              <Button variant="outline" onClick={exportGeojson}>GeoJSON</Button>
+            </div>
+          )}
+        </div>
       </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4">
+        <Kpi icon={<TrendingUp className="size-5 text-sky-600"/>} label="# signalements" value={stats.total_reports} tint="bg-sky-50" />
+        <Kpi icon={<CheckCircle className="size-5 text-green-600"/>} label="# résolus" value={stats.resolved_reports} tint="bg-green-50" />
+        <Kpi icon={<TrendingUp className="size-5 text-emerald-600"/>} label="Taux de résolution" value={`${stats.resolution_rate}%`} tint="bg-emerald-50" />
+        <Kpi icon={<Clock className="size-5 text-amber-600"/>} label="Délai résol. moyen (h)" value={stats.avg_resolution_hours} tint="bg-amber-50" />
+        <Kpi icon={<Clock className="size-5 text-indigo-600"/>} label="Délai revue moyen (h)" value={stats.avg_review_hours} tint="bg-indigo-50" />
+        <Kpi icon={<CheckCircle className="size-5 text-teal-700"/>} label="Conformité SLA résol." value={`${stats.sla_compliance_rate}%`} tint="bg-teal-50" />
+        <Kpi icon={<CheckCircle className="size-5 text-blue-700"/>} label="Conformité SLA revue" value={`${stats.review_sla_compliance_rate}%`} tint="bg-blue-50" />
+      </div>
+
       <div className="border rounded p-3">
         <div className="text-sm text-gray-600 mb-2">Fréquence mensuelle</div>
-        <div className="h-64">
+        <div className="min-h-[250px] md:min-h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={(stats.monthly_current||[]).map((d:any)=>({ month: d.month, count: Number(d.count) }))}>
               <XAxis dataKey="month" /><YAxis /><Tooltip />
@@ -58,7 +93,7 @@ const exportGeojson = () => { window.open(`${API_URL}/api/exports/reports.geojso
       <div className="grid md:grid-cols-2 gap-3">
         <div className="border rounded p-3">
           <div className="text-sm text-gray-600 mb-2">Par type</div>
-          <div className="h-64">
+          <div className="min-h-[250px] md:min-h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={typeData}>
                 <XAxis dataKey="name" hide/>
@@ -71,7 +106,7 @@ const exportGeojson = () => { window.open(`${API_URL}/api/exports/reports.geojso
         </div>
         <div className="border rounded p-3">
           <div className="text-sm text-gray-600 mb-2">Par criticité</div>
-          <div className="h-64">
+          <div className="min-h-[250px] md:min-h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={critData}>
                 <XAxis dataKey="name" />
@@ -89,7 +124,7 @@ const exportGeojson = () => { window.open(`${API_URL}/api/exports/reports.geojso
         <div className="grid md:grid-cols-3 gap-3">
           <div>
             <div className="text-sm text-gray-600 mb-1">Communes</div>
-            <div className="h-64">
+            <div className="min-h-[250px] md:min-h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={zoneCommune.slice(0,10)}>
                   <XAxis dataKey="name" hide />
@@ -102,7 +137,7 @@ const exportGeojson = () => { window.open(`${API_URL}/api/exports/reports.geojso
           </div>
           <div>
             <div className="text-sm text-gray-600 mb-1">Arrondissements</div>
-            <div className="h-64">
+            <div className="min-h-[250px] md:min-h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={zoneArr.slice(0,10)}>
                   <XAxis dataKey="name" hide />
@@ -115,7 +150,7 @@ const exportGeojson = () => { window.open(`${API_URL}/api/exports/reports.geojso
           </div>
           <div>
             <div className="text-sm text-gray-600 mb-1">Quartiers</div>
-            <div className="h-64">
+            <div className="min-h-[250px] md:min-h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={zoneQuart.slice(0,10)}>
                   <XAxis dataKey="name" hide />
@@ -129,20 +164,9 @@ const exportGeojson = () => { window.open(`${API_URL}/api/exports/reports.geojso
         </div>
       </div>
 
-      <div className="flex gap-3 items-center">
-        <div className="flex items-center gap-1">
-          <Button variant={period==='7'?'default':'outline'} onClick={()=>setPeriod('7')}>7 j</Button>
-          <Button variant={period==='30'?'default':'outline'} onClick={()=>setPeriod('30')}>30 j</Button>
-          <Button variant={period==='90'?'default':'outline'} onClick={()=>setPeriod('90')}>90 j</Button>
-        </div>
-        <Button onClick={exportPdf}>Export PDF</Button>
-        <Button variant="outline" onClick={()=>window.open(`${API_URL}/api/exports/reports.xlsx`, '_blank')}>Export Excel</Button>
-        <Button variant="outline" onClick={exportGeojson}>Exporter GeoJSON</Button>
-      </div>
-
       <div className="border rounded p-3">
         <div className="text-sm text-gray-600 mb-2">Carte de densité (par criticité)</div>
-        <div style={{height: 320}}>
+        <div className="h-[250px] md:h-[350px]">
           <MapContainer center={[14.6937, -17.4441]} zoom={12} style={{height: '100%', width: '100%'}}>
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
             {reports.filter((r:any)=>r.lat_masked && r.lng_masked).map((r:any)=>{
@@ -157,10 +181,13 @@ const exportGeojson = () => { window.open(`${API_URL}/api/exports/reports.geojso
   );
 }
 
-function Kpi({ label, value }:{label:string; value:any}){
+function Kpi({ label, value, icon, tint }:{label:string; value:any; icon?: React.ReactNode; tint?: string}){
   return (
-    <div className="border rounded p-3">
-      <div className="text-sm text-gray-600">{label}</div>
+    <div className={`border rounded p-3 ${tint || ''}`}>
+      <div className="flex items-center gap-2 text-sm text-gray-600">
+        {icon}
+        <span>{label}</span>
+      </div>
       <div className="text-2xl font-semibold">{value}</div>
     </div>
   );
