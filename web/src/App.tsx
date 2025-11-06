@@ -16,6 +16,7 @@ import ChantierDetail from "./pages/ChantierDetail";
 import { useIsMobile } from "./hooks/use-mobile";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./components/ui/sheet";
 import { AuthProvider } from "./contexts/AuthContext";
+import { ThemeProvider } from "next-themes";
 
 const navItems = [
   { to: "/signaler", label: "Signaler" },
@@ -115,53 +116,55 @@ export default function App() {
 
   return (
     <AuthProvider>
-      <BrowserRouter>
-        {backendHealthy === false ? (
-          <div className="min-h-screen flex items-center justify-center p-4">
-            <div className="max-w-md w-full">
-              <Alert variant="destructive">
-                <AlertCircle />
-                <AlertTitle>Erreur de connexion</AlertTitle>
-                <AlertDescription>
-                  <p>Impossible de se connecter au serveur backend.</p>
-                  <Button variant="outline" className="mt-3" onClick={() => window.location.reload()}>
-                    Réessayer
-                  </Button>
-                </AlertDescription>
-              </Alert>
-            </div>
-          </div>
-        ) : (
-          <div className="min-h-screen flex flex-col">
-            <header className="border-b bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-10">
-              <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
-                <div className="md:hidden">
-                  <MobileNav />
-                </div>
-                <Link to="/" className="text-responsive-h2 text-sky-600 tracking-tight">PISE</Link>
-                <div className="ml-auto">
-                  {isMobile ? null : <DesktopNav />}
-                </div>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <BrowserRouter>
+          {backendHealthy === false ? (
+            <div className="min-h-screen flex items-center justify-center p-4">
+              <div className="max-w-md w-full">
+                <Alert variant="destructive">
+                  <AlertCircle />
+                  <AlertTitle>Erreur de connexion</AlertTitle>
+                  <AlertDescription>
+                    <p>Impossible de se connecter au serveur backend.</p>
+                    <Button variant="outline" className="mt-3" onClick={() => window.location.reload()}>
+                      Réessayer
+                    </Button>
+                  </AlertDescription>
+                </Alert>
               </div>
-            </header>
-            <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/signaler" element={<SignalementForm />} />
-                <Route path="/suivi" element={<ReportsList />} />
-                <Route path="/suivi/:id" element={<ReportDetail />} />
-                <Route path="/chantiers" element={<ChantiersList />} />
-                <Route path="/chantiers/:id" element={<ChantierDetail />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/admin" element={<Admin />} />
-                <Route path="/compte" element={<Account />} />
-              </Routes>
-            </main>
-            <footer className="border-t text-center text-sm text-gray-500 py-4">© {new Date().getFullYear()} PISE</footer>
-          </div>
-        )}
-        <Toaster />
-      </BrowserRouter>
+            </div>
+          ) : (
+            <div className="min-h-screen flex flex-col">
+              <header className="border-b bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-10">
+                <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
+                  <div className="md:hidden">
+                    <MobileNav />
+                  </div>
+                  <Link to="/" className="text-responsive-h2 text-sky-600 tracking-tight">PISE</Link>
+                  <div className="ml-auto">
+                    {isMobile ? null : <DesktopNav />}
+                  </div>
+                </div>
+              </header>
+              <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/signaler" element={<SignalementForm />} />
+                  <Route path="/suivi" element={<ReportsList />} />
+                  <Route path="/suivi/:id" element={<ReportDetail />} />
+                  <Route path="/chantiers" element={<ChantiersList />} />
+                  <Route path="/chantiers/:id" element={<ChantierDetail />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/admin" element={<Admin />} />
+                  <Route path="/compte" element={<Account />} />
+                </Routes>
+              </main>
+              <footer className="border-t text-center text-sm text-gray-500 py-4">© {new Date().getFullYear()} PISE</footer>
+            </div>
+          )}
+          <Toaster />
+        </BrowserRouter>
+      </ThemeProvider>
     </AuthProvider>
   );
 }
