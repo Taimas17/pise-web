@@ -11,12 +11,35 @@ class InfrastructureTypeSeeder extends Seeder
     public function run(): void
     {
         $items = [
-            'Voirie', 'Eclairage public', 'Eau potable', 'Assainissement', 'Etablissement scolaire'
+            'Voirie',
+            'Eclairage public',
+            'Eau potable',
+            'Assainissement',
+            'Etablissement scolaire',
+            'Marché',
+            'Mosquée',
+            'Église',
+            'Poste de police',
+            'Centre de santé',
+            'Hôpital de zone',
+            'École maternelle',
+            'EPP',
+            'École technique',
+            'Centre-puits',
+            'Forage',
+            'Puits moderne',
+            'Contre-puits',
         ];
+
         foreach ($items as $name) {
-            InfrastructureType::firstOrCreate(['slug' => Str::slug($name)], [
-                'name' => $name,
-            ]);
+            $slug = Str::slug($name);
+            InfrastructureType::firstOrCreate(
+                ['slug' => $slug],
+                [
+                    'name' => $name,
+                    'description' => null,
+                ]
+            );
         }
     }
 }
