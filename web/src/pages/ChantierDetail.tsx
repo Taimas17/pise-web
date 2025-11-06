@@ -10,6 +10,7 @@ import Map from "../components/Map";
 import { toast } from "../components/ui/sonner";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "recharts";
 import { Progress } from "../components/ui/progress";
+import { Badge } from "../components/ui/badge";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -33,9 +34,15 @@ export default function ChantierDetail(){
 
   return (
     <div className="grid gap-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Chantier #{chantier.id} — {chantier.title}</h2>
-        <div className="text-sm text-gray-600">Statut: {chantier.status} • Avancement: {chantier.progress_pct}%</div>
+      <div className="grid gap-2">
+        <div className="flex items-start justify-between gap-2">
+          <h2 className="text-responsive-h2">Chantier #{chantier.id} — {chantier.title}</h2>
+          <div className="flex items-center gap-2">
+            <Badge className="bg-sky-100 text-sky-800 border-sky-200">{chantier.status}</Badge>
+            <span className="text-sm text-gray-600 hidden sm:inline">{chantier.progress_pct}%</span>
+          </div>
+        </div>
+        <Progress value={Number(chantier.progress_pct) || 0} />
       </div>
       <Tabs defaultValue="timeline">
         <TabsList>
@@ -254,7 +261,7 @@ function LotsTab({ chantier, onChanged }:{ chantier:any; onChanged: ()=>void }){
                 <Button variant="destructive" onClick={async()=>{ if(!confirm('Supprimer ce lot ?')) return; await api.delete(`/lots/${l.id}`); toast('Supprimé'); onChanged(); }}>Supprimer</Button>
               </div>
             </div>
-            <div className="grid md:grid-cols-5 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
               <Input placeholder="Titre" value={l.title} onChange={e=>setRows(rs=> rs.map(r=> r.id===l.id? { ...r, title: e.target.value }: r))} />
               <Input placeholder="Budget prévu" value={l.budget_planned} onChange={e=>setRows(rs=> rs.map(r=> r.id===l.id? { ...r, budget_planned: e.target.value }: r))} />
               <Input placeholder="Budget réalisé" value={l.budget_actual} onChange={e=>setRows(rs=> rs.map(r=> r.id===l.id? { ...r, budget_actual: e.target.value }: r))} />
@@ -369,7 +376,7 @@ function BudgetTab({ chantier, onChanged }:{ chantier:any; onChanged: ()=>void }
         <div className="border rounded p-3 grid gap-2">
           <div className="font-medium">Budgets</div>
           <div className="text-sm text-gray-600">Prévu: {chantier.budget_planned} • Engagé: {chantier.budget_committed} • Réalisé: {chantier.budget_actual}</div>
-          <div className="h-64">
+          <div className="min-h-[250px] md:min-h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={cumulative}>
                 <XAxis dataKey="date" hide/>

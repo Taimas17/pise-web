@@ -9,9 +9,34 @@ class ZoneSeeder extends Seeder
 {
     public function run(): void
     {
-        // Placeholders
-        $commune = Zone::firstOrCreate(['name' => 'Commune A', 'level' => 'commune']);
-        $arr = Zone::firstOrCreate(['name' => 'Arrondissement 1', 'level' => 'arrondissement', 'parent_id' => $commune->id]);
-        Zone::firstOrCreate(['name' => 'Quartier Centre', 'level' => 'quartier', 'parent_id' => $arr->id]);
+        $commune = Zone::firstOrCreate([
+            'name' => 'Commune de Kalalé',
+            'level' => 'commune',
+            'parent_id' => null,
+        ]);
+
+        $arrondissements = [
+            'Kalalé' => ['Centre', 'Zongo', 'Marché'],
+            'Dunkassa' => ['Centre', 'Zongo', 'Marché'],
+            'Derassi' => ['Centre', 'Zongo', 'Marché'],
+            'Doguè' => ['Centre', 'Zongo', 'Marché'],
+            'Basso' => ['Centre', 'Zongo', 'Marché'],
+        ];
+
+        foreach ($arrondissements as $arrName => $quartiers) {
+            $arr = Zone::firstOrCreate([
+                'name' => $arrName,
+                'level' => 'arrondissement',
+                'parent_id' => $commune->id,
+            ]);
+
+            foreach ($quartiers as $qName) {
+                Zone::firstOrCreate([
+                    'name' => $qName,
+                    'level' => 'quartier',
+                    'parent_id' => $arr->id,
+                ]);
+            }
+        }
     }
 }

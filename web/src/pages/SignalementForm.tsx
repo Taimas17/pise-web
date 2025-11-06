@@ -7,6 +7,9 @@ import { Textarea } from "../components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { toast } from "../components/ui/sonner";
 import { set, get } from 'idb-keyval';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { Skeleton } from "../components/ui/skeleton";
+import { FileText, Image as ImageIcon, MapPin } from "lucide-react";
 
 export default function SignalementForm(){
   const [lat, setLat] = useState<number | null>(null);
@@ -38,7 +41,7 @@ export default function SignalementForm(){
     files.forEach(f => data.append('photos[]', f));
 
     try {
-      const { data: created } = await api.post('/reports', data, { headers: { 'Content-Type': 'multipart/form-data' }});
+      await api.post('/reports', data, { headers: { 'Content-Type': 'multipart/form-data' }});
       toast('Signalement envoyé');
       setFiles([]); setForm({ ...form, description: '' });
     } catch (e){
@@ -75,49 +78,97 @@ export default function SignalementForm(){
 
   return (
     <div className="grid gap-4 max-w-2xl">
-      <h2 className="text-xl font-semibold">Créer un signalement</h2>
-      <label className="grid gap-2">
-        <span>Type d’infrastructure</span>
-        <Select value={form.infrastructure_type_id} onValueChange={(v)=>setForm(f=>({ ...f, infrastructure_type_id: v }))}>
-          <SelectTrigger><SelectValue placeholder="Choisir…"/></SelectTrigger>
-          <SelectContent>
-            {types.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      </label>
-      <label className="grid gap-2">
-        <span>Criticité</span>
-        <select className="border rounded p-2" value={form.criticality} onChange={e=>setForm(f=>({ ...f, criticality: e.target.value }))}>
-          <option value="faible">Faible</option>
-          <option value="moyenne">Moyenne</option>
-          <option value="haute">Haute</option>
-        </select>
-      </label>
-      <label className="grid gap-2">
-        <span>Description</span>
-        <Textarea value={form.description} onChange={e=>setForm(f=>({ ...f, description: e.target.value }))} rows={4} />
-      </label>
-      <div className="grid gap-2">
-        <span>Localisation</span>
-        <Map lat={lat} lng={lng} onPick={(la,lo)=>{ setLat(la); setLng(lo); }}/>
-        <div className="flex items-center gap-2 text-sm">
-          <input id="pub" type="checkbox" checked={form.public_location} onChange={e=>setForm(f=>({ ...f, public_location: e.target.checked }))} />
-          <label htmlFor="pub">Utiliser la précision exacte (sinon position masquée)</label>
-        </div>
+      <div>
+        <h2 className="text-responsive-h2 flex items-center gap-2"><FileText className="size-5 text-sky-600"/> Créer un signalement</h2>
+        <p className="text-gray-700 mt-1">Décrivez le problème, positionnez-le sur la carte et ajoutez des photos.</p>
       </div>
-      <div className="grid gap-2">
-        <span>Photos (max 5, 5 Mo/photo)</span>
-        <Input type="file" accept="image/*" multiple onChange={onFileChange} />
-        <div className="flex gap-2 flex-wrap text-xs text-gray-600">{files.map((f,i)=><span key={i}>{f.name}</span>)}</div>
+
+      <Card className="card-hover">
+        <CardHeader className="border-b">
+          <CardTitle>Informations</CardTitle>
+          <CardDescription>Type, criticité et description</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 pt-4">
+          <label className="grid gap-2">
+            <span>Type d’infrastructure</span>
+            <Select value={form.infrastructure_type_id} onValueChange={(v)=>setForm(f=>({ ...f, infrastructure_type_id: v }))}>
+              <SelectTrigger><SelectValue placeholder="Choisir…"/></SelectTrigger>
+              <SelectContent>
+                {types.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </label>
+          <label className="grid gap-2">
+            <span>Criticité</span>
+            <select className="border rounded p-2" value={form.criticality} onChange={e=>setForm(f=>({ ...f, criticality: e.target.value }))}>
+              <option value="faible">Faible</option>
+              <option value="moyenne">Moyenne</option>
+              <option value="haute">Haute</option>
+            </select>
+          </label>
+          <label className="grid gap-2">
+            <span>Description</span>
+            <Textarea value={form.description} onChange={e=>setForm(f=>({ ...f, description: e.target.value }))} rows={4} />
+          </label>
+        </CardContent>
+      </Card>
+
+      <Card className="card-hover">
+        <CardHeader className="border-b">
+          <CardTitle className="flex items-center gap-2"><MapPin className="size-4"/> Localisation</CardTitle>
+          <CardDescription>Déplacez le marqueur pour ajuster</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 pt-4">
+          <Map lat={lat} lng={lng} onPick={(la,lo)=>{ setLat(la); setLng(lo); }} className="h-[250px] md:h-[350px]"/>
+          <label className="flex items-center gap-2 text-sm">
+            <input id="pub" type="checkbox" checked={form.public_location} onChange={e=>setForm(f=>({ ...f, public_location: e.target.checked }))} />
+            <span>Utiliser la précision exacte (sinon position masquée)</span>
+          </label>
+        </CardContent>
+      </Card>
+
+      <Card className="card-hover">
+        <CardHeader className="border-b">
+          <CardTitle className="flex items-center gap-2"><ImageIcon className="size-4"/> Photos</CardTitle>
+          <CardDescription>Maximum 5 photos (5 Mo/photo)</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 pt-4">
+          <Input type="file" accept="image/*" multiple onChange={onFileChange} />
+          {!!files.length && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+              {files.map((f, i) => (
+                <div key={i} className="border rounded overflow-hidden">
+                  <img src={URL.createObjectURL(f)} alt={f.name} className="w-full h-24 object-cover" />
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="card-hover">
+        <CardHeader className="border-b">
+          <CardTitle>Contact (optionnel)</CardTitle>
+          <CardDescription>Nous pourrions vous recontacter si besoin</CardDescription>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <Input placeholder="Email" value={form.citizen_email} onChange={e=>setForm(f=>({ ...f, citizen_email: e.target.value }))} />
+            <Input placeholder="Téléphone" value={form.citizen_phone} onChange={e=>setForm(f=>({ ...f, citizen_phone: e.target.value }))} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex items-center gap-3">
+        <Button onClick={onSubmit} disabled={sending || !form.infrastructure_type_id} className="touch-target">{sending ? 'Envoi…' : 'Envoyer'}</Button>
+        {sending && (
+          <div className="flex-1 grid grid-cols-3 gap-2">
+            <Skeleton className="h-10" />
+            <Skeleton className="h-10" />
+            <Skeleton className="h-10" />
+          </div>
+        )}
       </div>
-      <div className="grid gap-2">
-        <span>Contact (optionnel)</span>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <Input placeholder="Email" value={form.citizen_email} onChange={e=>setForm(f=>({ ...f, citizen_email: e.target.value }))} />
-          <Input placeholder="Téléphone" value={form.citizen_phone} onChange={e=>setForm(f=>({ ...f, citizen_phone: e.target.value }))} />
-        </div>
-      </div>
-      <Button onClick={onSubmit} disabled={sending || !form.infrastructure_type_id}>Envoyer</Button>
     </div>
   );
 }
