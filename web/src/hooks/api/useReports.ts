@@ -61,3 +61,14 @@ export function useReviewReport() {
     },
   });
 }
+
+export function useAssignReport() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: number; payload: { user_id: number; due_at?: string } }) => apiService.reports.assign(id, payload),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: reportKeys.detail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: reportKeys.lists() });
+    },
+  });
+}
