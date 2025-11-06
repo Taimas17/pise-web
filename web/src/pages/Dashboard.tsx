@@ -31,7 +31,7 @@ export default function Dashboard(){
   const critData = useMemo(() => (stats?.by_criticality || []).map(d => ({ name: d.criticality, count: Number(d.count) })), [stats]);
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-6 animate-fade-in">
       <PageHeader
         title="Tableau de bord"
         actions={[
@@ -40,7 +40,7 @@ export default function Dashboard(){
             <ToggleGroupItem value="30">30 j</ToggleGroupItem>
             <ToggleGroupItem value="90">90 j</ToggleGroupItem>
           </ToggleGroup>,
-          <Button key="export" variant="outline"><Download className="mr-2 h-4 w-4"/>Exporter</Button>,
+          <Button key="export" variant="outline" className="transition-transform active:scale-95"><Download className="mr-2 h-4 w-4"/>Exporter</Button>,
         ]}
       />
 

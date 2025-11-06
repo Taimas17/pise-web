@@ -59,7 +59,7 @@ export default function ChantiersList(){
   }, [data, pageData]);
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-4 animate-fade-in">
       <PageHeader title="Chantiers" />
 
       <StatsGrid stats={kpis as any} columns={6} loading={isLoading} />
@@ -71,14 +71,16 @@ export default function ChantiersList(){
         onReset={() => setFilters({ page: 1, sort: '-created_at' })}
       />
 
-      <DataList
-        data={pageData}
-        renderItem={(c) => (
-          <ChantierCard chantier={c} onClick={() => navigate(`/chantiers/${(c as any).id}`)} />
-        )}
-        loading={isLoading}
-        pagination={{ current: data?.current_page, total: data?.last_page, onChange: (page) => setFilters((f) => ({ ...f, page })) }}
-      />
+      <div key={data?.current_page}>
+        <DataList
+          data={pageData}
+          renderItem={(c) => (
+            <ChantierCard chantier={c} onClick={() => navigate(`/chantiers/${(c as any).id}`)} />
+          )}
+          loading={isLoading}
+          pagination={{ current: data?.current_page, total: data?.last_page, onChange: (page) => setFilters((f) => ({ ...f, page })) }}
+        />
+      </div>
     </div>
   );
 }

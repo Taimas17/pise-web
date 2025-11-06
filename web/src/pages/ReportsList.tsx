@@ -63,11 +63,11 @@ export default function ReportsList(){
   }
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-4 animate-fade-in">
       <PageHeader
         title="Suivi des signalements"
         actions={[
-          <Button key="export" variant="outline" onClick={exportGeoJSON}>Export GeoJSON</Button>
+          <Button key="export" variant="outline" onClick={exportGeoJSON} className="transition-transform active:scale-95">Export GeoJSON</Button>
         ]}
       />
 
@@ -78,18 +78,20 @@ export default function ReportsList(){
         onReset={() => setFilters({ page: 1 })}
       />
 
-      <DataList
-        data={data?.data}
-        renderItem={(report) => (
-          <ReportCard
-            report={report}
-            onClick={() => navigate(`/suivi/${(report as any).id}`)}
-          />
-        )}
-        loading={isLoading}
-        error={error}
-        pagination={{ current: data?.current_page, total: data?.last_page, onChange: (page) => setFilters((f) => ({ ...f, page })) }}
-      />
+      <div key={data?.current_page}>
+        <DataList
+          data={data?.data}
+          renderItem={(report) => (
+            <ReportCard
+              report={report}
+              onClick={() => navigate(`/suivi/${(report as any).id}`)}
+            />
+          )}
+          loading={isLoading}
+          error={error}
+          pagination={{ current: data?.current_page, total: data?.last_page, onChange: (page) => setFilters((f) => ({ ...f, page })) }}
+        />
+      </div>
     </div>
   );
 }

@@ -8,10 +8,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, registerSchema } from "@/lib/validation/auth.schemas";
 import { useLogin, useMe, useRegister, useLogout } from "@/hooks/api/useAuth";
 import { useAuthStore } from "@/stores/useAuthStore";
+import LoadingState from "@/components/layouts/LoadingState";
+import { AnimatePresence, motion } from "framer-motion";
 
 export default function Account() {
   const [mode, setMode] = useState<"login" | "register">("login");
-  const { data: me } = useMe();
+  const { isLoading: meLoading } = useMe();
   const user = useAuthStore(s => s.user);
   const { mutate: doLogin, isPending: loginPending } = useLogin();
   const { mutate: doRegister, isPending: registerPending } = useRegister();
@@ -19,9 +21,13 @@ export default function Account() {
 
   useEffect(() => { /* ensures store sync via useMe */ }, []);
 
+  if (meLoading) {
+    return <div className="max-w-md"><LoadingState type="form" count={4} /></div>;
+  }
+
   if (user) {
     return (
-      <div className="max-w-xl grid gap-4">
+      <div className="max-w-xl grid gap-4 animate-slide-up">
         <Card>
           <CardHeader className="border-b">
             <CardTitle>Mon compte</CardTitle>
@@ -29,16 +35,16 @@ export default function Account() {
           </CardHeader>
           <CardContent className="pt-4">
             <div className="flex items-center gap-3">
-              <div className="size-12 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center font-semibold">
+              <div className="size-12 rounded-full bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300 flex items-center justify-center font-semibold">
                 {(user.name || user.email || "U").slice(0, 1).toUpperCase()}
               </div>
               <div>
                 <div className="font-medium">{user.name} — {user.role}</div>
-                <div className="text-sm text-gray-600">{user.email}</div>
+                <div className="text-sm text-muted-foreground">{user.email}</div>
               </div>
             </div>
             <div className="mt-4">
-              <Button variant="outline" onClick={() => doLogout()} disabled={logoutPending}>
+              <Button variant="outline" onClick={() => doLogout()} disabled={logoutPending} className="transition-transform active:scale-95">
                 {logoutPending ? "Déconnexion…" : "Se déconnecter"}
               </Button>
             </div>
@@ -50,17 +56,27 @@ export default function Account() {
 
   return (
     <div className="max-w-md">
-      <Card>
+      <Card className="animate-slide-up">
         <CardHeader className="border-b">
           <CardTitle>Compte</CardTitle>
           <CardDescription>Connexion ou inscription citoyen</CardDescription>
         </CardHeader>
         <CardContent className="pt-4 grid gap-4">
           <div className="flex gap-2 text-sm">
-            <button type="button" className={mode === "login" ? "font-semibold" : "text-gray-500"} onClick={() => setMode("login")}>Connexion</button>
-            <button type="button" className={mode === "register" ? "font-semibold" : "text-gray-500"} onClick={() => setMode("register")}>Inscription citoyen</button>
+            <button type="button" className={mode === "login" ? "font-semibold" : "text-muted-foreground"} onClick={() => setMode("login")}>Connexion</button>
+            <button type="button" className={mode === "register" ? "font-semibold" : "text-muted-foreground"} onClick={() => setMode("register")}>Inscription citoyen</button>
           </div>
-          {mode === 'login' ? <LoginForm onSubmit={(v) => doLogin(v)} loading={loginPending} /> : <RegisterForm onSubmit={(v) => doRegister(v)} loading={registerPending} />}
+          <AnimatePresence mode="wait">
+            {mode === 'login' ? (
+              <motion.div key="login" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+                <LoginForm onSubmit={(v) => doLogin(v)} loading={loginPending} />
+              </motion.div>
+            ) : (
+              <motion.div key="register" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+                <RegisterForm onSubmit={(v) => doRegister(v)} loading={registerPending} />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </CardContent>
       </Card>
     </div>
@@ -79,7 +95,7 @@ function LoginForm({ onSubmit, loading }: { onSubmit: (v: z.infer<typeof loginSc
         <Input placeholder="Mot de passe" type="password" {...form.register('password')} />
         {form.formState.errors.password && <div className="text-sm text-red-600 mt-1">{form.formState.errors.password.message}</div>}
       </div>
-      <Button type="submit" disabled={loading} className="touch-target">{loading ? 'Connexion…' : 'Connexion'}</Button>
+      <Button type="submit" disabled={loading} className="touch-target transition-transform active:scale-95">{loading ? 'Connexion…' : 'Connexion'}</Button>
     </form>
   );
 }
@@ -101,7 +117,7 @@ function RegisterForm({ onSubmit, loading }: { onSubmit: (v: z.infer<typeof regi
         {form.formState.errors.password && <div className="text-sm text-red-600 mt-1">{form.formState.errors.password.message}</div>}
       </div>
       <Input placeholder="Téléphone (optionnel)" {...form.register('phone')} />
-      <Button type="submit" disabled={loading} className="touch-target">{loading ? 'Inscription…' : 'Inscription'}</Button>
+      <Button type="submit" disabled={loading} className="touch-target transition-transform active:scale-95">{loading ? 'Inscription…' : 'Inscription'}</Button>
     </form>
   );
 }
