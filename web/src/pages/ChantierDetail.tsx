@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
+import Breadcrumbs from "@/components/navigation/Breadcrumbs";
 import { api } from "../lib/api";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Button } from "../components/ui/button";
@@ -35,6 +36,7 @@ export default function ChantierDetail(){
   return (
     <div className="grid gap-4">
       <div className="grid gap-2">
+        <Breadcrumbs items={[{ label: 'Chantiers', href: '/chantiers' }, { label: `Chantier #${chantier.id}` }]} />
         <div className="flex items-start justify-between gap-2">
           <h2 className="text-responsive-h2">Chantier #{chantier.id} — {chantier.title}</h2>
           <div className="flex items-center gap-2">

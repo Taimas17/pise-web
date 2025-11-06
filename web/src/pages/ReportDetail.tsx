@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, API_URL } from "../lib/api";
-import { useParams, Link as RouterLink } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import Map from "../components/Map";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -8,7 +8,7 @@ import { Textarea } from "../components/ui/textarea";
 import { toast } from "../components/ui/sonner";
 import { Badge } from "../components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "../components/ui/breadcrumb";
+import Breadcrumbs from "@/components/navigation/Breadcrumbs";
 import { AlertTriangle, CheckCircle, Clock } from "lucide-react";
 
 function SlaBlock({ label, dueAt, doneAt, nowTs }:{ label:string; dueAt?: string; doneAt?: string; nowTs: number }){
@@ -82,19 +82,7 @@ export default function ReportDetail(){
 
   return (
     <div className="grid gap-4">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <RouterLink to="/suivi">Suivi</RouterLink>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>Signalement #{report.id}</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+      <Breadcrumbs items={[{ label: 'Suivi', href: '/suivi' }, { label: `Signalement #${report.id}` }]} />
 
       <div className="flex items-center justify-between">
         <h2 className="text-responsive-h2">Signalement #{report.id}</h2>
