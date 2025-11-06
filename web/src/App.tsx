@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Link, NavLink } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect, useState } from "react";
 import SignalementForm from "./pages/SignalementForm";
 import ReportsList from "./pages/ReportsList";
@@ -23,7 +23,7 @@ import TableExample from "./pages/examples/TableExample";
 import ChartsExample from "./pages/examples/ChartsExample";
 import DialogsExample from "./pages/examples/DialogsExample";
 import SectionsExample from "./pages/examples/SectionsExample";
-import ThemeToggle from "./components/ThemeToggle";
+import Navbar from "./components/navigation/Navbar";
 
 const navItems = [
   { to: "/signaler", label: "Signaler" },
@@ -33,68 +33,6 @@ const navItems = [
   { to: "/admin", label: "Admin" },
   { to: "/compte", label: "Compte" },
 ];
-
-function MobileNav() {
-  return (
-    <Sheet>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="touch-target">
-          <Menu className="size-5" />
-          <span className="sr-only">Ouvrir la navigation</span>
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="left" className="p-0">
-        <SheetHeader className="p-4 border-b">
-          <SheetTitle>
-            <Link to="/" className="text-xl font-bold text-sky-600">PISE</Link>
-          </SheetTitle>
-        </SheetHeader>
-        <nav className="p-2">
-          <ul className="grid gap-1">
-            {navItems.map((item) => (
-              <li key={item.to}>
-                <NavLink
-                  to={item.to}
-                  className={({ isActive }) =>
-                    `block rounded-sm px-3 py-2 text-base ${
-                      isActive
-                        ? "bg-sky-50 text-sky-700 font-medium"
-                        : "text-gray-700 hover:bg-gray-50"
-                    }`
-                  }
-                >
-                  {item.label}
-                </NavLink>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </SheetContent>
-    </Sheet>
-  );
-}
-
-function DesktopNav() {
-  return (
-    <nav className="hidden md:flex items-center gap-5 text-sm">
-      {navItems.map((item) => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          className={({ isActive }) =>
-            `transition-colors ${
-              isActive
-                ? "text-sky-700 font-medium border-b-2 border-sky-600 pb-0.5"
-                : "text-gray-600 hover:text-gray-900"
-            }`
-          }
-        >
-          {item.label}
-        </NavLink>
-      ))}
-    </nav>
-  );
-}
 
 export default function App() {
   const isMobile = useIsMobile();
@@ -142,18 +80,7 @@ export default function App() {
             </div>
           ) : (
             <div className="min-h-screen flex flex-col">
-              <header className="border-b bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-10">
-                <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
-                  <div className="md:hidden">
-                    <MobileNav />
-                  </div>
-                  <Link to="/" className="text-responsive-h2 text-sky-600 tracking-tight">PISE</Link>
-                  <div className="ml-auto flex items-center gap-2">
-                    {isMobile ? null : <DesktopNav />}
-                    <ThemeToggle variant="switch" />
-                  </div>
-                </div>
-              </header>
+              <Navbar items={navItems} />
               <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
                 <Routes>
                   <Route path="/" element={<Home />} />
