@@ -17,6 +17,9 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->singleton(\App\Services\ZoneService::class);
+        $this->app->singleton(\App\Services\DashboardService::class);
+        $this->app->singleton(\App\Services\ChantierService::class);
     }
 
     public function boot(): void

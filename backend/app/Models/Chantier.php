@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\Filterable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 class Chantier extends Model
 {
-    use HasFactory;
+    use HasFactory, Filterable;
 
     protected $fillable = [
         'title','description','infrastructure_type_id','zone_id','status',
@@ -91,5 +92,20 @@ class Chantier extends Model
         if ($wkt) {
             $this->attributes['geometry'] = DB::raw("ST_SRID(ST_GeomFromText('$wkt'), 4326)");
         }
+    }
+
+    protected function getFilterMap(): array
+    {
+        return [
+            'infrastructure_type_id' => 'infrastructure_type_id',
+            'zone_id' => 'zone_id',
+            'status' => 'status',
+            'manager_user_id' => 'manager_user_id',
+        ];
+    }
+
+    protected function getSearchableColumns(): array
+    {
+        return ['title','description','external_ref'];
     }
 }

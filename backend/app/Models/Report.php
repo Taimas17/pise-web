@@ -3,13 +3,14 @@
 namespace App\Models;
 
 use App\Casts\Encrypted;
+use App\Traits\Filterable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 class Report extends Model
 {
-    use HasFactory;
+    use HasFactory, Filterable;
 
     protected $fillable = [
         'infrastructure_type_id','zone_id','criticality','status','title','description',
@@ -56,4 +57,19 @@ class Report extends Model
     public function statusHistories() { return $this->hasMany(StatusHistory::class); }
     public function assignments() { return $this->hasMany(Assignment::class); }
     public function reporter() { return $this->belongsTo(User::class, 'reported_by_user_id'); }
+
+    protected function getFilterMap(): array
+    {
+        return [
+            'type_id' => 'infrastructure_type_id',
+            'status' => 'status',
+            'criticality' => 'criticality',
+            'reporter_id' => 'reported_by_user_id',
+        ];
+    }
+
+    protected function getSearchableColumns(): array
+    {
+        return ['title','description','closed_reason'];
+    }
 }

@@ -23,30 +23,7 @@ class ReportController extends Controller
         if (optional($request->user())->role === 'citizen') {
             $query->where('reported_by_user_id', $request->user()->id);
         }
-        if ($type = $request->input('type_id')) $query->where('infrastructure_type_id', $type);
-        if ($status = $request->input('status')) $query->where('status', $status);
-        if ($crit = $request->input('criticality')) $query->where('criticality', $crit);
-        if ($zone = $request->input('zone_id')) $query->where('zone_id', $zone);
-        if ($reporter = $request->input('reporter_id')) $query->where('reported_by_user_id', $reporter);
-        if ($from = $request->input('from')) $query->whereDate('created_at', '>=', $from);
-        if ($to = $request->input('to')) $query->whereDate('created_at', '<=', $to);
-        if ($q = trim((string)$request->input('q'))) {
-            $query->where(function($qq) use ($q) {
-                $like = '%'.str_replace(['%','_'], ['\\%','\\_'], $q).'%';
-                $qq->where('title','like',$like)->orWhere('description','like',$like)->orWhere('closed_reason','like',$like);
-            });
-        }
-        if ($commune = $request->input('commune_id')) {
-            $ids = $this->collectZoneAndChildrenIds((int)$commune);
-            $query->whereIn('zone_id', $ids);
-        }
-        if ($arr = $request->input('arrondissement_id')) {
-            $ids = $this->collectZoneAndChildrenIds((int)$arr);
-            $query->whereIn('zone_id', $ids);
-        }
-        if ($quartier = $request->input('quartier_id')) {
-            $query->where('zone_id', $quartier);
-        }
+        $query->applyFilters($request);
         return $query->orderByDesc('id')->paginate(20);
     }
 
@@ -263,17 +240,6 @@ class ReportController extends Controller
         return ['resolution' => 72, 'review' => 8];
     }
 
-    private function collectZoneAndChildrenIds(int $zoneId): array
-    {
-        $ids = [$zoneId];
-        $level1 = Zone::where('parent_id',$zoneId)->pluck('id')->all();
-        $ids = array_merge($ids, $level1);
-        if ($level1) {
-            $level2 = Zone::whereIn('parent_id',$level1)->pluck('id')->all();
-            $ids = array_merge($ids, $level2);
-        }
-        return array_values(array_unique($ids));
-    }
 
     private function handlePhotos(Request $request, Report $report, int $maxPhotos, int $maxMb): void
     {

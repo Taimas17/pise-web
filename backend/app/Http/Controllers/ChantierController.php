@@ -17,6 +17,7 @@ use App\Models\Expense;
 use App\Models\Lot;
 use App\Models\Report;
 use App\Models\AuditLog;
+use App\Services\ChantierService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -24,25 +25,15 @@ use Intervention\Image\Laravel\Facades\Image;
 
 class ChantierController extends Controller
 {
+    public function __construct(private ChantierService $chantierService)
+    {
+    }
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', Chantier::class);
         $q = Chantier::query();
-
-        if ($v = $request->integer('infrastructure_type_id')) $q->where('infrastructure_type_id', $v);
-        if ($v = $request->integer('zone_id')) $q->where('zone_id', $v);
-        if ($v = $request->get('status')) $q->where('status', $v);
-        if ($v = $request->integer('manager_user_id')) $q->where('manager_user_id', $v);
-        if ($v = $request->date('from')) $q->whereDate('created_at', '>=', $v);
-        if ($v = $request->date('to')) $q->whereDate('created_at', '<=', $v);
-        if ($v = trim((string)$request->get('q', ''))) {
-            $v = addcslashes($v, '%_');
-            $q->where(function($qq) use ($v) {
-                $qq->where('title', 'like', "%$v%")
-                   ->orWhere('description', 'like', "%$v%")
-                   ->orWhere('external_ref', 'like', "%$v%");
-            });
-        }
+        $q->applyFilters($request);
 
         $sort = (string) $request->get('sort', '-created_at');
         if ($sort === '-created_at') $q->orderByDesc('created_at');
@@ -130,7 +121,7 @@ class ChantierController extends Controller
         $chantier = Chantier::findOrFail($id);
         $this->authorize('update', $chantier);
         $lot = $chantier->lots()->create($request->validated());
-        $this->recalcChantierFromLotsEtapes($chantier->id);
+        $this->chantierService->recalculateProgress($chantier);
         return response()->json($lot, 201);
     }
 
@@ -138,7 +129,10 @@ class ChantierController extends Controller
     {
         $this->authorize('update', $lot);
         $lot->update($request->validated());
-        $this->recalcChantierFromLotsEtapes($lot->chantier_id);
+        if ($lot->chantier_id) {
+            $ch = Chantier::find($lot->chantier_id);
+            if ($ch) $this->chantierService->recalculateProgress($ch);
+        }
         return $lot->fresh();
     }
 
@@ -147,7 +141,10 @@ class ChantierController extends Controller
         $this->authorize('delete', $lot);
         $chantierId = $lot->chantier_id;
         $lot->delete();
-        $this->recalcChantierFromLotsEtapes($chantierId);
+        if ($chantierId) {
+            $ch = Chantier::find($chantierId);
+            if ($ch) $this->chantierService->recalculateProgress($ch);
+        }
         return response()->noContent();
     }
 
@@ -163,7 +160,7 @@ class ChantierController extends Controller
         $chantier = Chantier::findOrFail($id);
         $this->authorize('update', $chantier);
         $etape = $chantier->etapes()->create($request->validated());
-        $this->recalcChantierFromLotsEtapes($chantier->id);
+        $this->chantierService->recalculateProgress($chantier);
         return response()->json($etape, 201);
     }
 
@@ -171,7 +168,10 @@ class ChantierController extends Controller
     {
         $this->authorize('update', $etape);
         $etape->update($request->validated());
-        $this->recalcChantierFromLotsEtapes($etape->chantier_id);
+        if ($etape->chantier_id) {
+            $ch = Chantier::find($etape->chantier_id);
+            if ($ch) $this->chantierService->recalculateProgress($ch);
+        }
         return $etape->fresh();
     }
 
@@ -180,7 +180,10 @@ class ChantierController extends Controller
         $this->authorize('delete', $etape);
         $chantierId = $etape->chantier_id;
         $etape->delete();
-        $this->recalcChantierFromLotsEtapes($chantierId);
+        if ($chantierId) {
+            $ch = Chantier::find($chantierId);
+            if ($ch) $this->chantierService->recalculateProgress($ch);
+        }
         return response()->noContent();
     }
 
@@ -196,7 +199,7 @@ class ChantierController extends Controller
         $chantier = Chantier::findOrFail($id);
         $this->authorize('manageBudget', $chantier);
         $expense = $chantier->expenses()->create($request->validated());
-        $this->recalcBudget($chantier->id);
+        $this->chantierService->recalculateBudget($chantier);
         return response()->json($expense, 201);
     }
 
@@ -204,7 +207,10 @@ class ChantierController extends Controller
     {
         $this->authorize('update', $expense);
         $expense->update($request->validated());
-        $this->recalcBudget($expense->chantier_id);
+        if ($expense->chantier_id) {
+            $ch = Chantier::find($expense->chantier_id);
+            if ($ch) $this->chantierService->recalculateBudget($ch);
+        }
         return $expense->fresh();
     }
 
@@ -213,7 +219,10 @@ class ChantierController extends Controller
         $this->authorize('delete', $expense);
         $chantierId = $expense->chantier_id;
         $expense->delete();
-        $this->recalcBudget($chantierId);
+        if ($chantierId) {
+            $ch = Chantier::find($chantierId);
+            if ($ch) $this->chantierService->recalculateBudget($ch);
+        }
         return response()->noContent();
     }
 
@@ -286,18 +295,4 @@ class ChantierController extends Controller
         return response()->noContent();
     }
 
-    protected function recalcChantierFromLotsEtapes(int $chantierId): void
-    {
-        $progress = DB::table('lots')->where('chantier_id', $chantierId)->avg('progress_pct');
-        if ($progress === null) {
-            $progress = DB::table('etapes')->where('chantier_id', $chantierId)->avg('progress_pct');
-        }
-        DB::table('chantiers')->where('id', $chantierId)->update(['progress_pct' => round((float)$progress, 2)]);
-    }
-
-    protected function recalcBudget(int $chantierId): void
-    {
-        $sum = DB::table('expenses')->where('chantier_id', $chantierId)->sum('amount');
-        DB::table('chantiers')->where('id', $chantierId)->update(['budget_actual' => $sum]);
-    }
 }

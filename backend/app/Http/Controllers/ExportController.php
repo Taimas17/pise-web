@@ -17,12 +17,7 @@ class ExportController extends Controller
     protected function filteredReports(Request $request)
     {
         $query = Report::with(['type','zone']);
-        if ($type = $request->input('type_id')) $query->where('infrastructure_type_id', $type);
-        if ($status = $request->input('status')) $query->where('status', $status);
-        if ($crit = $request->input('criticality')) $query->where('criticality', $crit);
-        if ($zone = $request->input('zone_id')) $query->where('zone_id', $zone);
-        if ($from = $request->input('from')) $query->whereDate('created_at', '>=', $from);
-        if ($to = $request->input('to')) $query->whereDate('created_at', '<=', $to);
+        $query->applyFilters($request);
         return $query->orderByDesc('id')->get();
     }
 
@@ -75,12 +70,7 @@ class ExportController extends Controller
     protected function filteredChantiers(Request $request)
     {
         $query = Chantier::with(['type','zone']);
-        if ($type = $request->input('infrastructure_type_id')) $query->where('infrastructure_type_id', $type);
-        if ($status = $request->input('status')) $query->where('status', $status);
-        if ($zone = $request->input('zone_id')) $query->where('zone_id', $zone);
-        if ($manager = $request->input('manager_user_id')) $query->where('manager_user_id', $manager);
-        if ($from = $request->input('from')) $query->whereDate('created_at', '>=', $from);
-        if ($to = $request->input('to')) $query->whereDate('created_at', '<=', $to);
+        $query->applyFilters($request);
         return $query->orderByDesc('id')->get();
     }
 

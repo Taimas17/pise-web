@@ -13,12 +13,7 @@ class MetricsController extends Controller
         $this->authorize('viewAny', Chantier::class);
 
         $q = Chantier::query();
-        if ($v = $request->integer('infrastructure_type_id')) $q->where('infrastructure_type_id', $v);
-        if ($v = $request->integer('zone_id')) $q->where('zone_id', $v);
-        if ($v = $request->get('status')) $q->where('status', $v);
-        if ($v = $request->integer('manager_user_id')) $q->where('manager_user_id', $v);
-        if ($v = $request->date('from')) $q->whereDate('created_at', '>=', $v);
-        if ($v = $request->date('to')) $q->whereDate('created_at', '<=', $v);
+        $q->applyFilters($request);
 
         $base = $q->clone();
 
