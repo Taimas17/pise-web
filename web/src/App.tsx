@@ -20,6 +20,9 @@ import { ThemeProvider } from "next-themes";
 import FiltersExample from "./pages/examples/FiltersExample";
 import StatsExample from "./pages/examples/StatsExample";
 import TableExample from "./pages/examples/TableExample";
+import ChartsExample from "./pages/examples/ChartsExample";
+import DialogsExample from "./pages/examples/DialogsExample";
+import SectionsExample from "./pages/examples/SectionsExample";
 
 const navItems = [
   { to: "/signaler", label: "Signaler" },
@@ -164,6 +167,9 @@ export default function App() {
                   <Route path="/examples/filters" element={<FiltersExample />} />
                   <Route path="/examples/stats" element={<StatsExample />} />
                   <Route path="/examples/table" element={<TableExample />} />
+                  <Route path="/examples/charts" element={<ChartsExample />} />
+                  <Route path="/examples/dialogs" element={<DialogsExample />} />
+                  <Route path="/examples/sections" element={<SectionsExample />} />
                 </Routes>
               </main>
               <footer className="border-t text-center text-sm text-gray-500 py-4">© {new Date().getFullYear()} PISE</footer>
