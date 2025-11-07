@@ -7,6 +7,9 @@ import { Input } from '@/components/ui/input';
 import { downloadBlob } from '@/lib/utils';
 import { useZones, useCreateZone, useUpdateZone, useDeleteZone, useImportZones } from '@/hooks/api/useZones';
 import FilterPanel, { FilterDescriptor } from '@/components/filters/FilterPanel';
+import axios from 'axios';
+import { API_URL } from '@/lib/api';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 export default function ZonesManager(){
   const [filters, setFilters] = useState<{ parent_id?: number; q?: string }>({});
@@ -51,6 +54,16 @@ export default function ZonesManager(){
         <input type="file" accept=".csv,.xlsx" onChange={(e)=> setFile(e.target.files?.[0] || null)} />
         <Button variant="outline" onClick={()=> { if(!file) return; const fd = new FormData(); fd.append('file', file); importZones(fd); setFile(null); }} disabled={importing}>Importer</Button>
         <Button variant="outline" onClick={exportCSV}>Exporter CSV</Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline">Exporter</Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={async ()=>{ const ts=new Date(); const suffix=`${ts.toISOString().slice(0,10)}-${String(ts.getHours()).padStart(2,'0')}${String(ts.getMinutes()).padStart(2,'0')}`; const params:any={}; if(filters.parent_id) params.parent_id=filters.parent_id; const { data } = await axios.get(`${API_URL}/api/zones/export`, { responseType:'blob', params:{ ...params, format:'pdf' } }); downloadBlob(`zones-${suffix}.pdf`, data); }}>PDF</DropdownMenuItem>
+            <DropdownMenuItem onClick={async ()=>{ const ts=new Date(); const suffix=`${ts.toISOString().slice(0,10)}-${String(ts.getHours()).padStart(2,'0')}${String(ts.getMinutes()).padStart(2,'0')}`; const params:any={}; if(filters.parent_id) params.parent_id=filters.parent_id; const { data } = await axios.get(`${API_URL}/api/zones/export`, { responseType:'blob', params:{ ...params, format:'excel' } }); downloadBlob(`zones-${suffix}.xlsx`, data); }}>Excel</DropdownMenuItem>
+            <DropdownMenuItem onClick={async ()=>{ const ts=new Date(); const suffix=`${ts.toISOString().slice(0,10)}-${String(ts.getHours()).padStart(2,'0')}${String(ts.getMinutes()).padStart(2,'0')}`; const params:any={}; if(filters.parent_id) params.parent_id=filters.parent_id; const { data } = await axios.get(`${API_URL}/api/zones/export`, { responseType:'blob', params:{ ...params, format:'geojson' } }); downloadBlob(`zones-${suffix}.geojson`, data); }}>GeoJSON</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <FilterPanel filters={filterDefs} values={filters as any} onChange={(name, value)=> setFilters(f=>({ ...f, [name]: value }))} />
