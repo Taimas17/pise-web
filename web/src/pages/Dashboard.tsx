@@ -12,6 +12,7 @@ import { Download } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, BarChart, Bar } from 'recharts';
 import { apiService } from '@/services/api.service';
 import { downloadBlob } from '@/lib/utils';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const DensityMap = lazy(() => import('@/components/maps/DensityMap'));
 
@@ -42,13 +43,16 @@ export default function Dashboard(){
             <ToggleGroupItem value="30">30 j</ToggleGroupItem>
             <ToggleGroupItem value="90">90 j</ToggleGroupItem>
           </ToggleGroup>,
-          <Button key="export" variant="outline" className="transition-transform active:scale-95" onClick={async ()=>{
-            const params: any = { from };
-            const ts = new Date();
-            const suffix = `${ts.toISOString().slice(0,10)}-${String(ts.getHours()).padStart(2,'0')}${String(ts.getMinutes()).padStart(2,'0')}`;
-            const blob = await apiService.exports.excel(params);
-            downloadBlob(`reports-${suffix}.xlsx`, blob);
-          }}><Download className="mr-2 h-4 w-4"/>Exporter</Button>,
+          <DropdownMenu key="export">
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="transition-transform active:scale-95"><Download className="mr-2 h-4 w-4"/>Exporter</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={async ()=>{ const ts = new Date(); const suffix = `${ts.toISOString().slice(0,10)}-${String(ts.getHours()).padStart(2,'0')}${String(ts.getMinutes()).padStart(2,'0')}`; const blob = await apiService.exports.pdf({ from }); downloadBlob(`reports-${suffix}.pdf`, blob); }}>PDF</DropdownMenuItem>
+              <DropdownMenuItem onClick={async ()=>{ const ts = new Date(); const suffix = `${ts.toISOString().slice(0,10)}-${String(ts.getHours()).padStart(2,'0')}${String(ts.getMinutes()).padStart(2,'0')}`; const blob = await apiService.exports.excel({ from }); downloadBlob(`reports-${suffix}.xlsx`, blob); }}>Excel</DropdownMenuItem>
+              <DropdownMenuItem onClick={async ()=>{ const ts = new Date(); const suffix = `${ts.toISOString().slice(0,10)}-${String(ts.getHours()).padStart(2,'0')}${String(ts.getMinutes()).padStart(2,'0')}`; const blob = await apiService.exports.geojson({ from }); downloadBlob(`reports-${suffix}.geojson`, blob); }}>GeoJSON</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>,
         ]}
       />
 

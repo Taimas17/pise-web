@@ -46,29 +46,29 @@ export default function ChantierDetail(){
           <TabsTrigger value="infos">Infos</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="lots">
+        <TabsContent value="lots"><div className="animate-fade-in">
           <LotsTab chantierId={chantier.id} lots={chantier.lots} />
-        </TabsContent>
+        </div></TabsContent>
 
-        <TabsContent value="timeline">
+        <TabsContent value="timeline"><div className="animate-fade-in">
           <TimelineTab chantierId={chantier.id} etapes={chantier.etapes} lots={chantier.lots} />
-        </TabsContent>
+        </div></TabsContent>
 
-        <TabsContent value="budget">
+        <TabsContent value="budget"><div className="animate-fade-in">
           <BudgetTab chantierId={chantier.id} expenses={chantier.expenses} lots={chantier.lots} summary={{ budget_planned: chantier.budget_planned, budget_committed: chantier.budget_committed, budget_actual: chantier.budget_actual }} />
-        </TabsContent>
+        </div></TabsContent>
 
-        <TabsContent value="documents">
+        <TabsContent value="documents"><div className="animate-fade-in">
           <DocumentsTab chantierId={chantier.id} attachments={chantier.attachments} />
-        </TabsContent>
+        </div></TabsContent>
 
-        <TabsContent value="alertes">
+        <TabsContent value="alertes"><div className="animate-fade-in">
           <AlertesTab chantierId={chantier.id} reports={chantier.reports} onChanged={() => { /* invalidation via mutations in future */ }} />
-        </TabsContent>
+        </div></TabsContent>
 
-        <TabsContent value="infos">
+        <TabsContent value="infos"><div className="animate-fade-in">
           <InfosTab chantier={chantier} types={[]} />
-        </TabsContent>
+        </div></TabsContent>
       </Tabs>
     </div>
   );

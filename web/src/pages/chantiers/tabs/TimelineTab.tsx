@@ -50,8 +50,8 @@ export default function TimelineTab({ chantierId, etapes = [], lots = [] }: { ch
       </div>
 
       <div className="grid gap-2">
-        {ordered.map((e:any) => (
-          <div key={e.id} className="border rounded p-3 flex items-center justify-between animate-slide-up">
+        {ordered.map((e:any, i:number) => (
+          <div key={e.id} className="border rounded p-3 flex items-center justify-between animate-slide-up" style={{ animationDelay: `${i*40}ms` }}>
             <div>
               <div className="font-medium">{e.name}</div>
               <div className="text-sm text-muted-foreground">{e.status} • {e.progress_pct}% • {e.planned_start_at?.slice(0,10)} → {e.planned_end_at?.slice(0,10)}</div>

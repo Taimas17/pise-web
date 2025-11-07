@@ -13,8 +13,8 @@ export default function AlertesTab({ chantierId, reports = [], onChanged }: { ch
         <Button onClick={async ()=> { if(!reportId) return; await api.post(`/chantiers/${chantierId}/reports`, { report_id: Number(reportId) }); toast('Liée'); onChanged(); setReportId(''); }}>Lier</Button>
       </div>
       <div className="grid gap-2">
-        {reports.map((r:any)=> (
-          <div key={r.id} className="border rounded p-3 flex items-center justify-between animate-slide-up">
+        {reports.map((r:any, i:number)=> (
+          <div key={r.id} className="border rounded p-3 flex items-center justify-between animate-slide-up" style={{ animationDelay: `${i*40}ms` }}>
             <div>
               <div className="font-medium">Alerte #{r.id} — {r.title}</div>
               <div className="text-sm text-muted-foreground">{r.status} • {r.criticality}</div>

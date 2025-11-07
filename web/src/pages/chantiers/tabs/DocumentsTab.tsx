@@ -21,8 +21,8 @@ export default function DocumentsTab({ chantierId, attachments = [] }: { chantie
       </div>
 
       <div className="grid gap-2">
-        {attachments.map((a:any)=> (
-          <div key={a.id} className="border rounded p-3 flex items-center justify-between animate-slide-up">
+        {attachments.map((a:any, i:number)=> (
+          <div key={a.id} className="border rounded p-3 flex items-center justify-between animate-slide-up" style={{ animationDelay: `${i*40}ms` }}>
             <div>
               <div className="font-medium">{a.type} — {a.category || 'n/a'}</div>
               <div className="text-sm text-muted-foreground">{a.path}</div>

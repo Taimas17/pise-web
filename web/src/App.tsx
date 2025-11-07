@@ -23,6 +23,7 @@ import TableExample from "./pages/examples/TableExample";
 import ChartsExample from "./pages/examples/ChartsExample";
 import DialogsExample from "./pages/examples/DialogsExample";
 import SectionsExample from "./pages/examples/SectionsExample";
+import DarkCheck from "./pages/examples/DarkCheck";
 import Navbar from "./components/navigation/Navbar";
 
 const navItems = [
@@ -99,6 +100,7 @@ export default function App() {
                   <Route path="/examples/charts" element={<ChartsExample />} />
                   <Route path="/examples/dialogs" element={<DialogsExample />} />
                   <Route path="/examples/sections" element={<SectionsExample />} />
+                  <Route path="/examples/dark-check" element={<DarkCheck />} />
                 </Routes>
               </main>
               <footer className="border-t text-center text-sm text-gray-500 py-4">© {new Date().getFullYear()} PISE</footer>

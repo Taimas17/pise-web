@@ -59,8 +59,8 @@ export default function BudgetTab({ chantierId, expenses = [], lots = [], summar
       </div>
 
       <div className="grid gap-2">
-        {expenses.map((e:any)=> (
-          <div key={e.id} className="border rounded p-3 flex items-center justify-between animate-slide-up">
+        {expenses.map((e:any, i:number)=> (
+          <div key={e.id} className="border rounded p-3 flex items-center justify-between animate-slide-up" style={{ animationDelay: `${i*40}ms` }}>
             <div>
               <div className="font-medium">{e.label} — {e.amount}</div>
               <div className="text-sm text-muted-foreground">{e.incurred_at} • {e.note}</div>

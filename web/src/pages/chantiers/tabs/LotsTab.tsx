@@ -35,8 +35,8 @@ export default function LotsTab({ chantierId, lots = [] }: { chantierId: number;
       </div>
 
       <div className="grid gap-2">
-        {lots.map((l) => (
-          <div key={l.id} className="border rounded p-3 grid gap-2 animate-slide-up">
+        {lots.map((l, i) => (
+          <div key={l.id} className="border rounded p-3 grid gap-2 animate-slide-up" style={{ animationDelay: `${i*40}ms` }}>
             <div className="flex items-center justify-between">
               <div className="font-medium">Lot #{l.id}</div>
               <Button variant="destructive" onClick={() => deleteLot(l.id)}>Supprimer</Button>
