@@ -1,314 +1,110 @@
-import { useEffect, useMemo, useState } from "react";
-import { api } from "../lib/api";
-import { Link } from "react-router-dom";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Badge } from "../components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../components/ui/select";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "../components/ui/drawer";
-import { Filter, Search } from "lucide-react";
-import { useIsMobile } from "../hooks/use-mobile";
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import PageHeader from '@/components/layouts/PageHeader';
+import FilterPanel, { FilterDescriptor } from '@/components/filters/FilterPanel';
+import DataList from '@/components/lists/DataList';
+import { ReportCard } from '@/components/reports/ReportCard';
+import { useReports } from '@/hooks/api/useReports';
+import { useInfraTypes } from '@/hooks/api/useInfraTypes';
+import type { ReportFilters } from '@/services/types';
+import { Button } from '@/components/ui/button';
+import { apiService } from '@/services/api.service';
+import { downloadBlob } from '@/lib/utils';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
-export default function ReportsList() {
-  const [reports, setReports] = useState<any[]>([]);
-  const [types, setTypes] = useState<any[]>([]);
-  const [filters, setFilters] = useState({
-    status: "",
-    type_id: "",
-    criticality: "",
-    q: "",
-    from: "",
-    to: "",
-    commune_id: "",
-    arrondissement_id: "",
-    quartier_id: "",
-  });
-  const [communes, setCommunes] = useState<any[]>([]);
-  const [arrondissements, setArrondissements] = useState<any[]>([]);
-  const [quartiers, setQuartiers] = useState<any[]>([]);
+const statusOptions = [
+  { label: 'En attente', value: 'pending' },
+  { label: 'Approuvé', value: 'approved' },
+  { label: 'Assigné', value: 'assigned' },
+  { label: 'En cours', value: 'in_progress' },
+  { label: 'Résolu', value: 'resolved' },
+  { label: 'Rejeté', value: 'rejected' },
+];
 
-  async function load() {
-    const params = Object.fromEntries(
-      Object.entries(filters).filter(([_, v]) => v)
-    );
-    const { data } = await api.get("/reports", { params });
-    setReports(data.data || data);
-  }
+const criticalityOptions = [
+  { label: 'Faible', value: 'low' },
+  { label: 'Moyenne', value: 'medium' },
+  { label: 'Haute', value: 'high' },
+  { label: 'Critique', value: 'critical' },
+];
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const { data } = await api.get("/infrastructure-types");
-        setTypes(data);
-        const { data: com } = await api.get("/zones", { params: { level: "commune" } });
-        setCommunes(com);
-      } catch {}
-    })();
-  }, []);
+export default function ReportsList(){
+  const navigate = useNavigate();
+  const [filters, setFilters] = useState<ReportFilters>({ page: 1 });
+  const { data: types } = useInfraTypes();
 
-  useEffect(() => {
-    (async () => {
-      if (filters.commune_id) {
-        const { data } = await api.get("/zones", {
-          params: { level: "arrondissement", parent_id: filters.commune_id },
-        });
-        setArrondissements(data);
-        setQuartiers([]);
-      } else {
-        setArrondissements([]);
-        setQuartiers([]);
-      }
-    })();
-  }, [filters.commune_id]);
+  const filterDefs: FilterDescriptor[] = useMemo(() => ([
+    { type: 'search', name: 'q', label: 'Rechercher' },
+    { type: 'select', name: 'status', label: 'Statut', options: statusOptions },
+    { type: 'select', name: 'criticality', label: 'Criticité', options: criticalityOptions },
+    { type: 'select', name: 'infrastructure_type_id', label: 'Type', options: (types||[]).map(t => ({ label: t.name, value: t.id })) },
+    { type: 'date-range', name: 'dates', label: 'Période' },
+    { type: 'cascade', name: 'zone_id', label: 'Zone' },
+  ]), [types]);
 
-  useEffect(() => {
-    (async () => {
-      if (filters.arrondissement_id) {
-        const { data } = await api.get("/zones", {
-          params: { level: "quartier", parent_id: filters.arrondissement_id },
-        });
-        setQuartiers(data);
-      } else {
-        setQuartiers([]);
-      }
-    })();
-  }, [filters.arrondissement_id]);
-
-  useEffect(() => {
-    load();
+  const effectiveFilters: ReportFilters = useMemo(() => {
+    const ef: ReportFilters = { ...filters };
+    const dates: any = (filters as any).dates;
+    if (dates?.from) ef.from = new Date(dates.from).toISOString().slice(0,10);
+    if (dates?.to) ef.to = new Date(dates.to).toISOString().slice(0,10);
+    return ef;
   }, [filters]);
 
-  const isMobile = useIsMobile();
+  const { data, isLoading, error } = useReports(effectiveFilters, { keepPreviousData: true });
 
-  const activeFiltersCount = useMemo(() => {
-    const { q, ...rest } = filters;
-    return Object.values(rest).filter(Boolean).length;
-  }, [filters]);
-
-  function StatusBadge({ value }: { value?: string }) {
-    const map: Record<string, string> = {
-      draft: "bg-gray-100 text-gray-800 border-gray-200",
-      pending_review: "bg-yellow-100 text-yellow-800 border-yellow-200",
-      assigned: "bg-sky-100 text-sky-800 border-sky-200",
-      resolved: "bg-green-100 text-green-800 border-green-200",
-      rejected: "bg-red-100 text-red-800 border-red-200",
-    };
-    return <Badge className={map[value || ""] || "bg-gray-100 text-gray-800 border-gray-200"}>{value || ""}</Badge>;
-  }
-
-  function CritBadge({ value }: { value?: string }) {
-    const map: Record<string, string> = {
-      faible: "bg-gray-100 text-gray-800 border-gray-200",
-      moyenne: "bg-orange-100 text-orange-800 border-orange-200",
-      haute: "bg-red-100 text-red-800 border-red-200",
-    };
-    return <Badge className={map[value || ""] || "bg-gray-100 text-gray-800 border-gray-200"}>{value || ""}</Badge>;
+  async function exportFile(kind: 'pdf' | 'excel' | 'geojson'){
+    const ts = new Date();
+    const suffix = `${ts.toISOString().slice(0,10)}-${String(ts.getHours()).padStart(2,'0')}${String(ts.getMinutes()).padStart(2,'0')}`;
+    if (kind === 'pdf') {
+      const blob = await apiService.exports.pdf(effectiveFilters as any);
+      downloadBlob(`reports-${suffix}.pdf`, blob);
+    } else if (kind === 'excel') {
+      const blob = await apiService.exports.excel(effectiveFilters as any);
+      downloadBlob(`reports-${suffix}.xlsx`, blob);
+    } else {
+      const blob = await apiService.exports.geojson(effectiveFilters as any);
+      downloadBlob(`reports-${suffix}.geojson`, blob);
+    }
   }
 
   return (
-    <div className="grid gap-4">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-responsive-h2">Suivi des signalements</h2>
-      </div>
+    <div className="grid gap-4 animate-fade-in">
+      <PageHeader
+        title="Suivi des signalements"
+        actions={[
+          <DropdownMenu key="export">
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="transition-transform active:scale-95">Exporter</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => exportFile('pdf')}>PDF</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportFile('excel')}>Excel</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportFile('geojson')}>GeoJSON</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ]}
+      />
 
-      {/* Barre d'actions (mobile + desktop) */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex w-full gap-2">
-          <div className="relative w-full">
-            <Input
-              placeholder="Recherche"
-              value={filters.q}
-              onChange={(e) => setFilters((f) => ({ ...f, q: e.target.value }))}
-              className="w-full"
+      <FilterPanel
+        filters={filterDefs}
+        values={filters as any}
+        onChange={(name, value) => setFilters((f) => ({ ...f, [name]: value, page: 1 }))}
+        onReset={() => setFilters({ page: 1 })}
+      />
+
+      <div key={data?.current_page}>
+        <DataList
+          data={data?.data}
+          renderItem={(report) => (
+            <ReportCard
+              report={report}
+              onClick={() => navigate(`/suivi/${(report as any).id}`)}
             />
-            <Search className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
-          </div>
-          {isMobile && (
-            <Drawer>
-              <DrawerTrigger asChild>
-                <Button variant="outline" className="touch-target">
-                  <Filter className="mr-2 size-4" /> Filtres
-                  {activeFiltersCount > 0 && (
-                    <Badge className="ml-2 bg-sky-600 text-white border-sky-600">{activeFiltersCount}</Badge>
-                  )}
-                </Button>
-              </DrawerTrigger>
-              <DrawerContent>
-                <DrawerHeader>
-                  <DrawerTitle>Filtres avancés</DrawerTitle>
-                </DrawerHeader>
-                <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Select value={filters.status} onValueChange={(v) => setFilters((f) => ({ ...f, status: v }))}>
-                    <SelectTrigger><SelectValue placeholder="Statut" /></SelectTrigger>
-                    <SelectContent>
-                      {["draft", "pending_review", "assigned", "resolved", "rejected"].map((s) => (
-                        <SelectItem key={s} value={s}>{s}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={filters.type_id} onValueChange={(v) => setFilters((f) => ({ ...f, type_id: v }))}>
-                    <SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger>
-                    <SelectContent>
-                      {types.map((t) => (
-                        <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={filters.criticality} onValueChange={(v) => setFilters((f) => ({ ...f, criticality: v }))}>
-                    <SelectTrigger><SelectValue placeholder="Criticité" /></SelectTrigger>
-                    <SelectContent>
-                      {["faible", "moyenne", "haute"].map((s) => (
-                        <SelectItem key={s} value={s}>{s}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Input type="date" value={filters.from} onChange={(e) => setFilters((f) => ({ ...f, from: e.target.value }))} />
-                  <Input type="date" value={filters.to} onChange={(e) => setFilters((f) => ({ ...f, to: e.target.value }))} />
-                  <Select value={filters.commune_id} onValueChange={(v) => setFilters((f) => ({ ...f, commune_id: v, arrondissement_id: "", quartier_id: "" }))}>
-                    <SelectTrigger><SelectValue placeholder="Commune" /></SelectTrigger>
-                    <SelectContent>
-                      {communes.map((z) => (
-                        <SelectItem key={z.id} value={String(z.id)}>{z.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={filters.arrondissement_id} onValueChange={(v) => setFilters((f) => ({ ...f, arrondissement_id: v, quartier_id: "" }))}>
-                    <SelectTrigger><SelectValue placeholder="Arrondissement" /></SelectTrigger>
-                    <SelectContent>
-                      {arrondissements.map((z) => (
-                        <SelectItem key={z.id} value={String(z.id)}>{z.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={filters.quartier_id} onValueChange={(v) => setFilters((f) => ({ ...f, quartier_id: v }))}>
-                    <SelectTrigger><SelectValue placeholder="Quartier" /></SelectTrigger>
-                    <SelectContent>
-                      {quartiers.map((z) => (
-                        <SelectItem key={z.id} value={String(z.id)}>{z.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </DrawerContent>
-            </Drawer>
           )}
-        </div>
-
-        {/* Desktop filters visibles */}
-        {!isMobile && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 w-full md:w-auto">
-            <Select value={filters.status} onValueChange={(v) => setFilters((f) => ({ ...f, status: v }))}>
-              <SelectTrigger><SelectValue placeholder="Statut" /></SelectTrigger>
-              <SelectContent>
-                {["draft", "pending_review", "assigned", "resolved", "rejected"].map((s) => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filters.type_id} onValueChange={(v) => setFilters((f) => ({ ...f, type_id: v }))}>
-              <SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger>
-              <SelectContent>
-                {types.map((t) => (
-                  <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filters.criticality} onValueChange={(v) => setFilters((f) => ({ ...f, criticality: v }))}>
-              <SelectTrigger><SelectValue placeholder="Criticité" /></SelectTrigger>
-              <SelectContent>
-                {["faible", "moyenne", "haute"].map((s) => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="grid grid-cols-2 gap-2">
-              <Input type="date" value={filters.from} onChange={(e) => setFilters((f) => ({ ...f, from: e.target.value }))} />
-              <Input type="date" value={filters.to} onChange={(e) => setFilters((f) => ({ ...f, to: e.target.value }))} />
-            </div>
-            <Select value={filters.commune_id} onValueChange={(v) => setFilters((f) => ({ ...f, commune_id: v, arrondissement_id: "", quartier_id: "" }))}>
-              <SelectTrigger><SelectValue placeholder="Commune" /></SelectTrigger>
-              <SelectContent>
-                {communes.map((z) => (
-                  <SelectItem key={z.id} value={String(z.id)}>{z.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filters.arrondissement_id} onValueChange={(v) => setFilters((f) => ({ ...f, arrondissement_id: v, quartier_id: "" }))}>
-              <SelectTrigger><SelectValue placeholder="Arrondissement" /></SelectTrigger>
-              <SelectContent>
-                {arrondissements.map((z) => (
-                  <SelectItem key={z.id} value={String(z.id)}>{z.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filters.quartier_id} onValueChange={(v) => setFilters((f) => ({ ...f, quartier_id: v }))}>
-              <SelectTrigger><SelectValue placeholder="Quartier" /></SelectTrigger>
-              <SelectContent>
-                {quartiers.map((z) => (
-                  <SelectItem key={z.id} value={String(z.id)}>{z.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-      </div>
-
-      {/* Liste des reports */}
-      <div className="grid gap-2">
-        {reports.map((r: any) => (
-          <Link
-            to={`/suivi/${r.id}`}
-            key={r.id}
-            className="border rounded-lg p-4 card-hover"
-          >
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div className="font-medium text-gray-900">
-                #{r.id} — {r.title || r.type?.name}
-              </div>
-              <div className="flex flex-wrap items-center gap-2 text-sm">
-                {r.criticality && <CritBadge value={r.criticality} />}
-                {r.status && <StatusBadge value={r.status} />} 
-              </div>
-            </div>
-            {r.description && (
-              <div className="text-sm text-gray-700 mt-1">
-                {String(r.description).slice(0, 120)}
-              </div>
-            )}
-          </Link>
-        ))}
-      </div>
-
-      {/* Actions d'export */}
-      <div className="pt-2">
-        <Button
-          variant="outline"
-          onClick={() =>
-            window.open(
-              `/api/exports/reports.geojson?${new URLSearchParams(
-                Object.fromEntries(
-                  Object.entries(filters).filter(([_, v]) => v)
-                )
-              ).toString()}`,
-              "_blank"
-            )
-          }
-          className="touch-target"
-        >
-          Exporter GeoJSON
-        </Button>
+          loading={isLoading}
+          error={error}
+          pagination={{ current: data?.current_page, total: data?.last_page, onChange: (page) => setFilters((f) => ({ ...f, page })) }}
+        />
       </div>
     </div>
   );
