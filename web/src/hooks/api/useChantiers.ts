@@ -41,11 +41,7 @@ export function useCreateLot(){
   return useMutation({
     mutationFn: ({ chantierId, payload }: { chantierId: number; payload: any }) => apiService.chantiers.lots.create(chantierId, payload),
     onSuccess: (_d, v) => qc.invalidateQueries({ queryKey: chantierKeys.detail(v.chantierId) }),
-    onError: (err: any) => {
-      const message = err?.response?.data?.message || 'Erreur lors de la création du lot';
-      // eslint-disable-next-line no-console
-      console.error(err);
-    },
+    onError: (err: any) => toast.error(err?.response?.data?.message || 'Erreur lors de la création du lot'),
   });
 }
 export function useUpdateLot(){

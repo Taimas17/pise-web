@@ -26,7 +26,7 @@ api.interceptors.response.use(
           await sanctumCsrf();
           return api.request(originalConfig);
         }
-      } catch {}
+      } catch (_e) { /* ignore retry error */ }
     }
 
     if (status === 401) {
