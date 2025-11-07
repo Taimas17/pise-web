@@ -10,6 +10,7 @@ import type { ReportFilters } from '@/services/types';
 import { Button } from '@/components/ui/button';
 import { apiService } from '@/services/api.service';
 import { downloadBlob } from '@/lib/utils';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const statusOptions = [
   { label: 'En attente', value: 'pending' },
@@ -51,11 +52,19 @@ export default function ReportsList(){
 
   const { data, isLoading, error } = useReports(effectiveFilters, { keepPreviousData: true });
 
-  async function exportGeoJSON(){
-    const blob = await apiService.exports.geojson(effectiveFilters as any);
+  async function exportFile(kind: 'pdf' | 'excel' | 'geojson'){
     const ts = new Date();
-    const name = `reports-${ts.toISOString().slice(0,10)}-${String(ts.getHours()).padStart(2,'0')}${String(ts.getMinutes()).padStart(2,'0')}.geojson`;
-    downloadBlob(name, blob);
+    const suffix = `${ts.toISOString().slice(0,10)}-${String(ts.getHours()).padStart(2,'0')}${String(ts.getMinutes()).padStart(2,'0')}`;
+    if (kind === 'pdf') {
+      const blob = await apiService.exports.pdf(effectiveFilters as any);
+      downloadBlob(`reports-${suffix}.pdf`, blob);
+    } else if (kind === 'excel') {
+      const blob = await apiService.exports.excel(effectiveFilters as any);
+      downloadBlob(`reports-${suffix}.xlsx`, blob);
+    } else {
+      const blob = await apiService.exports.geojson(effectiveFilters as any);
+      downloadBlob(`reports-${suffix}.geojson`, blob);
+    }
   }
 
   return (
@@ -63,7 +72,16 @@ export default function ReportsList(){
       <PageHeader
         title="Suivi des signalements"
         actions={[
-          <Button key="export" variant="outline" onClick={exportGeoJSON} className="transition-transform active:scale-95">Export GeoJSON</Button>
+          <DropdownMenu key="export">
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="transition-transform active:scale-95">Exporter</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => exportFile('pdf')}>PDF</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportFile('excel')}>Excel</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportFile('geojson')}>GeoJSON</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         ]}
       />
 
