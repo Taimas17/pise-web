@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Download } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, BarChart, Bar } from 'recharts';
+import { apiService } from '@/services/api.service';
+import { downloadBlob } from '@/lib/utils';
 
 const DensityMap = lazy(() => import('@/components/maps/DensityMap'));
 
@@ -40,7 +42,13 @@ export default function Dashboard(){
             <ToggleGroupItem value="30">30 j</ToggleGroupItem>
             <ToggleGroupItem value="90">90 j</ToggleGroupItem>
           </ToggleGroup>,
-          <Button key="export" variant="outline" className="transition-transform active:scale-95"><Download className="mr-2 h-4 w-4"/>Exporter</Button>,
+          <Button key="export" variant="outline" className="transition-transform active:scale-95" onClick={async ()=>{
+            const params: any = { from };
+            const ts = new Date();
+            const suffix = `${ts.toISOString().slice(0,10)}-${String(ts.getHours()).padStart(2,'0')}${String(ts.getMinutes()).padStart(2,'0')}`;
+            const blob = await apiService.exports.excel(params);
+            downloadBlob(`reports-${suffix}.xlsx`, blob);
+          }}><Download className="mr-2 h-4 w-4"/>Exporter</Button>,
         ]}
       />
 

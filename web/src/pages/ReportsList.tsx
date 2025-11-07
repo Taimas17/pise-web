@@ -9,6 +9,7 @@ import { useInfraTypes } from '@/hooks/api/useInfraTypes';
 import type { ReportFilters } from '@/services/types';
 import { Button } from '@/components/ui/button';
 import { apiService } from '@/services/api.service';
+import { downloadBlob } from '@/lib/utils';
 
 const statusOptions = [
   { label: 'En attente', value: 'pending' },
@@ -52,14 +53,9 @@ export default function ReportsList(){
 
   async function exportGeoJSON(){
     const blob = await apiService.exports.geojson(effectiveFilters as any);
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'reports.geojson';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    const ts = new Date();
+    const name = `reports-${ts.toISOString().slice(0,10)}-${String(ts.getHours()).padStart(2,'0')}${String(ts.getMinutes()).padStart(2,'0')}.geojson`;
+    downloadBlob(name, blob);
   }
 
   return (

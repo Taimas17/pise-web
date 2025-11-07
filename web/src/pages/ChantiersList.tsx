@@ -8,6 +8,10 @@ import { useChantiers } from '@/hooks/api/useChantiers';
 import { useInfraTypes } from '@/hooks/api/useInfraTypes';
 import StatsGrid from '@/components/stats/StatsGrid';
 import type { Chantier } from '@/services/types';
+import { Button } from '@/components/ui/button';
+import { API_URL } from '@/lib/api';
+import axios from 'axios';
+import { downloadBlob } from '@/lib/utils';
 
 const statusOptions = [
   { label: 'Planifié', value: 'planned' },
@@ -60,7 +64,20 @@ export default function ChantiersList(){
 
   return (
     <div className="grid gap-4 animate-fade-in">
-      <PageHeader title="Chantiers" />
+      <PageHeader title="Chantiers" actions={[
+        <Button key="pdf" variant="outline" className="transition-transform active:scale-95" onClick={async ()=>{
+          const params = new URLSearchParams(Object.fromEntries(Object.entries(effectiveFilters).filter(([k,v]) => ['infrastructure_type_id','status','from','to','zone_id','manager_user_id'].includes(k) && v as any)) as any).toString();
+          const { data } = await axios.get(`${API_URL}/api/exports/chantiers.pdf?${params}`, { responseType: 'blob' });
+          const ts = new Date(); const suffix = `${ts.toISOString().slice(0,10)}-${String(ts.getHours()).padStart(2,'0')}${String(ts.getMinutes()).padStart(2,'0')}`;
+          downloadBlob(`chantiers-${suffix}.pdf`, data);
+        }}>PDF</Button>,
+        <Button key="xlsx" variant="outline" className="transition-transform active:scale-95" onClick={async ()=>{
+          const params = new URLSearchParams(Object.fromEntries(Object.entries(effectiveFilters).filter(([k,v]) => ['infrastructure_type_id','status','from','to','zone_id','manager_user_id'].includes(k) && v as any)) as any).toString();
+          const { data } = await axios.get(`${API_URL}/api/exports/chantiers.xlsx?${params}`, { responseType: 'blob' });
+          const ts = new Date(); const suffix = `${ts.toISOString().slice(0,10)}-${String(ts.getHours()).padStart(2,'0')}${String(ts.getMinutes()).padStart(2,'0')}`;
+          downloadBlob(`chantiers-${suffix}.xlsx`, data);
+        }}>Excel</Button>
+      ]} />
 
       <StatsGrid stats={kpis as any} columns={6} loading={isLoading} />
 
