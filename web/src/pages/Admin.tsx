@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "../lib/api";
+import { api, sanctumCsrf } from "../lib/api";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
@@ -22,9 +22,20 @@ export default function Admin(){
 function TypesManager(){
   const [types, setTypes] = useState<any[]>([]);
   const [name, setName] = useState("");
-  async function load(){ const { data } = await api.get('/infrastructure-types'); setTypes(data); }
+  async function load(){
+    try{
+      await sanctumCsrf();
+      const { data } = await api.get('/infrastructure-types');
+      setTypes(data);
+    } catch (err:any) {
+      console.error('Failed to load infrastructure types', err);
+      if (err?.response?.status === 401) {
+        // unauthorized — leave handling to global auth flow
+      }
+    }
+  }
   useEffect(()=>{ load(); },[]);
-  async function add(){ if(!name) return; await api.post('/infrastructure-types', { name }); setName(''); await load(); }
+  async function add(){ if(!name) return; try{ await sanctumCsrf(); await api.post('/infrastructure-types', { name }); setName(''); await load(); }catch(err:any){ console.error('Failed to add infra type', err); }}
   return (
     <div className="border rounded p-3">
       <div className="font-medium mb-2">Types d’infrastructure</div>
@@ -42,11 +53,11 @@ function ZonesManager(){
   const [zones, setZones] = useState<any[]>([]);
   const [level, setLevel] = useState('commune');
   const [editName, setEditName] = useState<Record<number,string>>({});
-  async function importZones(){ if(!file) return; const fd = new FormData(); fd.append('file', file); await api.post('/zones/import', fd); alert('Import terminé'); load(); }
-  async function load(){ const { data } = await api.get('/zones', { params: { level } }); setZones(data); }
+  async function importZones(){ if(!file) return; const fd = new FormData(); fd.append('file', file); try{ await sanctumCsrf(); await api.post('/zones/import', fd); alert('Import terminé'); await load(); }catch(err:any){ console.error('Import zones failed', err); alert(err?.response?.data?.message || 'Erreur d\'import'); } }
+  async function load(){ try{ await sanctumCsrf(); const { data } = await api.get('/zones', { params: { level } }); setZones(data); }catch(err:any){ console.error('Failed to load zones', err); if(err?.response?.status===401){ /* unauthorized */ } }}
   useEffect(()=>{ load(); }, [level]);
-  async function saveName(z:any){ await api.patch(`/zones/${z.id}`, { name: editName[z.id] ?? z.name }); await load(); }
-  async function remove(z:any){ if(!confirm('Supprimer cette zone ?')) return; try{ await api.delete(`/zones/${z.id}`); await load(); }catch(e:any){ alert(e?.response?.data?.message || 'Erreur de suppression'); } }
+  async function saveName(z:any){ try{ await sanctumCsrf(); await api.patch(`/zones/${z.id}`, { name: editName[z.id] ?? z.name }); await load(); }catch(err:any){ console.error('Failed to save zone name', err); alert(err?.response?.data?.message || 'Erreur'); }}
+  async function remove(z:any){ if(!confirm('Supprimer cette zone ?')) return; try{ await sanctumCsrf(); await api.delete(`/zones/${z.id}`); await load(); }catch(e:any){ console.error('Failed to delete zone', e); alert(e?.response?.data?.message || 'Erreur de suppression'); } }
   return (
     <div className="border rounded p-3">
       <div className="font-medium mb-2">Zones</div>
@@ -80,9 +91,9 @@ function UsersManager(){
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
   const isMobile = useIsMobile();
-  async function load(){ const { data } = await api.get('/users', { params: { role: role||undefined, q: q||undefined, page } }); setUsers(data.data || data); }
+  async function load(){ try{ await sanctumCsrf(); const { data } = await api.get('/users', { params: { role: role||undefined, q: q||undefined, page } }); setUsers(data.data || data); }catch(err:any){ console.error('Failed to load users', err); if(err?.response?.status===401){ /* unauthorized */ } }}
   useEffect(()=>{ load(); }, [role, q, page]);
-  async function changeRole(u:any, newRole:string){ if(!confirm(`Changer le rôle de ${u.name} en ${newRole} ?`)) return; await api.patch(`/users/${u.id}/role`, { role: newRole }); await load(); }
+  async function changeRole(u:any, newRole:string){ if(!confirm(`Changer le rôle de ${u.name} en ${newRole} ?`)) return; try{ await sanctumCsrf(); await api.patch(`/users/${u.id}/role`, { role: newRole }); await load(); }catch(err:any){ console.error('Failed to change role', err); alert(err?.response?.data?.message || 'Erreur'); }}
   return (
     <div className="border rounded p-3">
       <div className="font-medium mb-2">Utilisateurs</div>
@@ -154,7 +165,7 @@ function AuditViewer(){
   const [userId, setUserId] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
-  async function load(){ const { data } = await api.get('/audit/logs', { params: { entity_type: entityType||undefined, user_id: userId||undefined, from: from||undefined, to: to||undefined } }); setLogs(data.data || data); }
+  async function load(){ try{ await sanctumCsrf(); const { data } = await api.get('/audit/logs', { params: { entity_type: entityType||undefined, user_id: userId||undefined, from: from||undefined, to: to||undefined } }); setLogs(data.data || data); }catch(err:any){ console.error('Failed to load audit logs', err); }}
   useEffect(()=>{ load(); }, [entityType, userId, from, to]);
   return (
     <div className="border rounded p-3">

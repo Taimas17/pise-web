@@ -42,7 +42,11 @@ function buildQuery(params?: Record<string, unknown>) {
 
 export const apiService = {
   auth: {
-    me: () => withRetry(() => api.get<User>('/auth/me').then(r => r.data)),
+    me: async () => {
+      // Ensure CSRF cookie is present so the session cookie is treated as stateful by Sanctum
+      await sanctumCsrf();
+      return withRetry(() => api.get<User>('/auth/me').then(r => r.data));
+    },
     login: async (payload: { email: string; password: string }) => {
       await sanctumCsrf();
       return api.post<User>('/auth/login', payload).then(r => r.data);
@@ -51,7 +55,7 @@ export const apiService = {
       await sanctumCsrf();
       return api.post<User>('/auth/register', payload).then(r => r.data);
     },
-    logout: () => api.post('/auth/logout').then(r => r.data),
+  logout: async () => { await sanctumCsrf(); return api.post('/auth/logout').then(r => r.data); },
   },
   reports: {
     list: (filters: ReportFilters = {}) => withRetry(() => api.get<PaginatedResponse<Report>>(`/reports${buildQuery(filters)}`).then(r => r.data)),

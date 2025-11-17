@@ -31,5 +31,14 @@ class AppServiceProvider extends ServiceProvider
         Lot::observe(LotObserver::class);
         Etape::observe(EtapeObserver::class);
         Expense::observe(ExpenseObserver::class);
+
+        // Ensure exceptions for API routes are returned as JSON instead of attempting
+        // a redirect to a named 'login' route (which may be absent for API-only setups).
+        if ($this->app->bound(\Illuminate\Foundation\Exceptions\Handler::class)) {
+            $this->app->make(\Illuminate\Foundation\Exceptions\Handler::class)
+                ->shouldRenderJsonWhen(function ($request, $e) {
+                    return $request->is('api/*') || $request->expectsJson();
+                });
+        }
     }
 }

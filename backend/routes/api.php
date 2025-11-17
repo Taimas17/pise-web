@@ -21,11 +21,22 @@ Route::get('/health', function () {
     ]);
 });
 
-Route::prefix('auth')->group(function () {
+Route::prefix('auth')->middleware([
+    \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+    \Illuminate\Session\Middleware\StartSession::class,
+])->group(function () {
+    // register/login use session state (AuthController uses session()),
+    // so we enable the cookie + session middlewares on these routes.
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
     Route::get('/me', [AuthController::class, 'me'])->middleware('auth:sanctum');
+});
+
+// Temporary debug route to fetch zones without auth for local troubleshooting.
+// Remove once UTF-8 / response issues are resolved.
+Route::get('/_debug/zones', function () {
+     return response()->json(\App\Models\Zone::all());
 });
 
 Route::middleware(['throttle:reports'])->group(function () {
@@ -36,14 +47,17 @@ Route::post('/reports/{report}/photos', [ReportController::class, 'uploadPhotos'
     ->middleware(['auth:sanctum','can:update,report']);
 
 Route::get('/reports', [ReportController::class, 'index'])->middleware(['auth:sanctum','can:viewAny,App\\Models\\Report']);
+Route::get('/reports/stats', [DashboardController::class, 'stats'])->middleware(['auth:sanctum']);
 Route::get('/reports/{report}', [ReportController::class, 'show'])->middleware(['auth:sanctum','can:view,report']);
 Route::get('/reports/{report}/audit', [ReportController::class, 'audit'])->middleware(['auth:sanctum','can:view,report']);
 Route::patch('/reports/{report}', [ReportController::class, 'update'])->middleware(['auth:sanctum','can:update,report']);
 Route::post('/reports/{report}/review', [ReportController::class, 'review'])->middleware(['auth:sanctum','can:review,report']);
 Route::post('/reports/{report}/assign', [ReportController::class, 'assign'])->middleware(['auth:sanctum','can:assign,report']);
-Route::get('/reports/stats', [DashboardController::class, 'stats'])->middleware(['auth:sanctum','can:stats,App\\Models\\Report']);
 
-Route::apiResource('infrastructure-types', InfrastructureTypeController::class)->middleware('auth:sanctum');
+// Public listing for frontend signalement form
+Route::get('/infrastructure-types', [InfrastructureTypeController::class, 'index']);
+// Protect create/update/delete via sanctum and policies; index is excluded above.
+Route::apiResource('infrastructure-types', InfrastructureTypeController::class)->except(['index'])->middleware('auth:sanctum');
 
 Route::get('/zones', [ZoneController::class, 'index'])->middleware('auth:sanctum');
 Route::post('/zones', [ZoneController::class, 'store'])->middleware(['auth:sanctum','role:admin']);

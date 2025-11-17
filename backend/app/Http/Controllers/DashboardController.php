@@ -10,6 +10,7 @@ class DashboardController extends Controller
 {
     public function stats(Request $request)
     {
+        $this->authorize('stats', Report::class);
         $query = Report::query();
         if ($type = $request->input('type_id')) $query->where('infrastructure_type_id', $type);
         if ($status = $request->input('status')) $query->where('status', $status);

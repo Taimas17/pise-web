@@ -14,8 +14,9 @@ class Report extends Model
 
     protected $fillable = [
         'infrastructure_type_id','zone_id','criticality','status','title','description',
-        'public_location','lat_masked','lng_masked','citizen_email_enc','citizen_phone_enc',
-        'submitted_at','reviewed_at','assigned_at','resolved_at','reported_by_user_id','location',
+        'public_location','citizen_email_enc','citizen_phone_enc',
+        'submitted_at','reviewed_at','assigned_at','resolved_at','reported_by_user_id',
+        'latitude','longitude','lat_masked','lng_masked',
         'sla_due_at','sla_review_due_at','escalation_level','escalated_at','closed_reason','closed_category'
     ];
 
@@ -37,19 +38,47 @@ class Report extends Model
 
     protected static function booted(): void
     {
-        static::saving(function (self $report) {
-            if ($report->lat_masked !== null && $report->lng_masked !== null) {
-                $lat = (float) $report->lat_masked;
-                $lng = (float) $report->lng_masked;
-                $report->setLocationFromLatLng($lat, $lng);
-            }
-        });
+        // Location is set explicitly by controllers/seeders using setLocationFromLatLng()
     }
 
+    /**
+     * Replace geometry storage with decimal columns.
+     * Controllers/seeders call setLocationFromLatLng($lat, $lng) — we keep the method
+     * name but store decimals in `latitude`/`longitude` and masked copies.
+     */
     public function setLocationFromLatLng(float $lat, float $lng): void
     {
-        $geo = app(GeometryService::class)->createPoint((float)$lng, (float)$lat);
-        $this->attributes['location'] = DB::raw(DB::getPdo()->quote($geo));
+        $lat = round((float)$lat, 6);
+        $lng = round((float)$lng, 6);
+        $this->attributes['latitude'] = $lat;
+        $this->attributes['longitude'] = $lng;
+        // For masked values we store the provided values; callers usually pass masked
+        // values when privacy is required. Ensure stored masked columns are rounded.
+        $this->attributes['lat_masked'] = $lat;
+        $this->attributes['lng_masked'] = $lng;
+    }
+
+    // Accessor helpers to provide compatibility with previous `lat_masked`/`lng_masked` columns.
+    public function getLatMaskedAttribute()
+    {
+        if (array_key_exists('lat_masked', $this->attributes) && $this->attributes['lat_masked'] !== null) {
+            return round((float)$this->attributes['lat_masked'], 6);
+        }
+        if (array_key_exists('latitude', $this->attributes) && $this->attributes['latitude'] !== null) {
+            return round((float)$this->attributes['latitude'], 6);
+        }
+        return null;
+    }
+
+    public function getLngMaskedAttribute()
+    {
+        if (array_key_exists('lng_masked', $this->attributes) && $this->attributes['lng_masked'] !== null) {
+            return round((float)$this->attributes['lng_masked'], 6);
+        }
+        if (array_key_exists('longitude', $this->attributes) && $this->attributes['longitude'] !== null) {
+            return round((float)$this->attributes['longitude'], 6);
+        }
+        return null;
     }
 
     public function type() { return $this->belongsTo(InfrastructureType::class, 'infrastructure_type_id'); }

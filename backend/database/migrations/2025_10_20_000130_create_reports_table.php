@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
@@ -17,7 +16,11 @@ return new class extends Migration {
             $table->string('title')->nullable();
             $table->text('description')->nullable();
             $table->boolean('public_location')->default(false);
-            $table->point('location')->nullable();
+
+            // Colonnes latitude/longitude pour compatibilité locale
+            $table->decimal('latitude', 10, 7)->nullable();
+            $table->decimal('longitude', 10, 7)->nullable();
+
             $table->text('location_precise_enc')->nullable();
             $table->decimal('lat_masked', 9, 6)->nullable();
             $table->decimal('lng_masked', 9, 6)->nullable();
@@ -30,10 +33,6 @@ return new class extends Migration {
             $table->foreignId('reported_by_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
-
-        // Ensure SRID 4326 and spatial index
-        DB::statement('ALTER TABLE reports MODIFY COLUMN location POINT SRID 4326 NULL');
-        DB::statement('CREATE SPATIAL INDEX reports_location_spatial_index ON reports (location)');
     }
 
     public function down(): void

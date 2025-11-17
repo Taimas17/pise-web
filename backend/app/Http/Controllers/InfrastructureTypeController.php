@@ -8,7 +8,14 @@ use Illuminate\Support\Str;
 
 class InfrastructureTypeController extends Controller
 {
-    public function index() { $this->authorize('viewAny', InfrastructureType::class); return InfrastructureType::orderBy('name')->get(); }
+    public function index()
+    {
+        // Allow public listing for the signalement form while keeping other actions protected by policies.
+        if (auth()->check()) {
+            $this->authorize('viewAny', InfrastructureType::class);
+        }
+        return InfrastructureType::orderBy('name')->get();
+    }
 
     public function store(Request $request)
     { $this->authorize('create', InfrastructureType::class);

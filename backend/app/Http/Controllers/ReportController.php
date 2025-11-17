@@ -77,8 +77,8 @@ class ReportController extends Controller
             'photos.*' => ["nullable","file","mimetypes:image/jpeg,image/png","max:".($maxMb*1024)],
         ]);
 
-        $lat = round((float)$data['lat'], 6);
-        $lng = round((float)$data['lng'], 6);
+    $lat = round((float)$data['lat'], 6);
+    $lng = round((float)$data['lng'], 6);
         if ($lat < -90 || $lat > 90 || $lng < -180 || $lng > 180) {
             throw ValidationException::withMessages([
                 'lat' => 'Coordonnées invalides',
@@ -95,8 +95,7 @@ class ReportController extends Controller
             'title' => $data['title'] ?? null,
             'description' => $data['description'] ?? null,
             'public_location' => (bool)($data['public_location'] ?? false),
-            'lat_masked' => $data['public_location'] ? $lat : round($lat, 3),
-            'lng_masked' => $data['public_location'] ? $lng : round($lng, 3),
+            // masked coordinates are provided via accessors on the model (derived from geometry)
             'citizen_email_enc' => $data['citizen_email'] ?? null,
             'citizen_phone_enc' => $data['citizen_phone'] ?? null,
             'submitted_at' => $data['submitted_at'] ?? now(),
@@ -104,8 +103,12 @@ class ReportController extends Controller
         ]);
         
         // Store precise coordinates encrypted
-        $report->location_precise_enc = json_encode(['lat' => $lat, 'lng' => $lng]);
-        $report->setLocationFromLatLng($report->lat_masked, $report->lng_masked);
+    $report->location_precise_enc = json_encode(['lat' => $lat, 'lng' => $lng]);
+        // Set the geometry location using masked (public) or precise coordinates depending on settings
+        // Use precise masked coordinates when public_location is true, otherwise store rounded for privacy
+        $useLat = $report->public_location ? $lat : round($lat, 3);
+        $useLng = $report->public_location ? $lng : round($lng, 3);
+    $report->setLocationFromLatLng($useLat, $useLng);
         $this->applySla($report);
         $report->save();
 

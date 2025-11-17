@@ -11,10 +11,13 @@ export function useAuth(){
 
   useEffect(()=>{ (async()=>{
     try {
+      await sanctumCsrf();
       const { data } = await api.get('/auth/me');
       setUser(data);
     } catch (err) {
       console.debug('Utilisateur non authentifié');
+      // Ensure persisted store is cleared when unauthenticated to avoid stale UI state
+      setUser(null);
     } finally {
       setLoading(false);
     }

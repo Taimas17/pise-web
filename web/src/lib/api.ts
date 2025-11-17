@@ -29,6 +29,19 @@ api.interceptors.response.use(
       } catch (_e) { /* ignore retry error */ }
     }
 
+    // If we get a 401 (unauthorized), try refreshing CSRF cookie once and retry the request.
+    // This helps when the browser hasn't fetched the CSRF cookie yet and the request is treated as stateless by Sanctum.
+    if (status === 401) {
+      try {
+        const originalConfig: any = error.config || {};
+        if (!originalConfig._retry401) {
+          originalConfig._retry401 = true;
+          await sanctumCsrf();
+          return api.request(originalConfig);
+        }
+      } catch (_e) { /* ignore retry error */ }
+    }
+
     if (status === 401) {
       toast.error("Session expirée, veuillez vous reconnecter");
     } else if (status === 403) {

@@ -32,10 +32,10 @@ return new class extends Migration {
             $table->index('planned_end_at');
         });
 
+        // Colonne geometry pour local, nullable, pas d'index spatial
         DB::statement('ALTER TABLE chantiers ADD geometry GEOMETRY NULL');
-        DB::statement('ALTER TABLE chantiers MODIFY COLUMN geometry GEOMETRY SRID 4326 NULL');
-        DB::statement('CREATE SPATIAL INDEX chantiers_geometry_spatial_index ON chantiers (geometry)');
 
+        // Index FULLTEXT sur les colonnes texte
         DB::statement('CREATE FULLTEXT INDEX chantiers_fulltext ON chantiers (title, description, external_ref)');
     }
 

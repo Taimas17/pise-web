@@ -1,6 +1,7 @@
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { useState, useEffect } from 'react';
 import { Menu } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -9,8 +10,16 @@ export type NavItem = { to: string; label: string };
 
 export default function MobileNav({ items }: { items: NavItem[] }){
   const user = useAuthStore(s => s.user);
+  const [open, setOpen] = useState(false);
+  const location = useLocation();
+
+  // Close the mobile menu on route change (covers navigate() calls)
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname]);
+
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button variant="ghost" size="icon" className="touch-target">
           <Menu className="size-5" />
@@ -20,7 +29,7 @@ export default function MobileNav({ items }: { items: NavItem[] }){
       <SheetContent side="left" className="p-0">
         <SheetHeader className="p-4 border-b">
           <SheetTitle>
-            <Link to="/" className="text-xl font-bold text-sky-600">PISE</Link>
+            <Link to="/" onClick={() => setOpen(false)} className="text-xl font-bold text-sky-600">PISE</Link>
           </SheetTitle>
         </SheetHeader>
         <div className="p-3 border-b flex items-center justify-between">
@@ -35,6 +44,7 @@ export default function MobileNav({ items }: { items: NavItem[] }){
               <li key={item.to}>
                 <NavLink
                   to={item.to}
+                  onClick={() => setOpen(false)}
                   className={({ isActive }) =>
                     `block rounded-sm px-3 py-2 text-base ${
                       isActive ? 'bg-sky-50 text-sky-700 font-medium' : 'text-gray-700 hover:bg-gray-50'

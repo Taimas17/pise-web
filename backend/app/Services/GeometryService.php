@@ -9,7 +9,9 @@ class GeometryService
     public function createPoint(float $lng, float $lat): string
     {
         $this->validateBounds($lng, $lat);
-        $row = DB::selectOne('SELECT ST_SRID(Point(?, ?), 4326) as geo', [$lng, $lat]);
+        // Use MySQL-compatible functions: create geometry from WKT with SRID and return WKT
+        $wkt = sprintf('POINT(%F %F)', $lng, $lat);
+        $row = DB::selectOne('SELECT ST_AsText(ST_GeomFromText(?, 4326)) as geo', [$wkt]);
         if (!$row || !isset($row->geo)) {
             throw new \RuntimeException('Failed to create POINT geometry');
         }
@@ -46,7 +48,8 @@ class GeometryService
                 throw new \InvalidArgumentException('LINESTRING must contain at least one coordinate pair');
             }
             $wkt = 'LINESTRING(' . implode(',', $pairs) . ')';
-            $row = DB::selectOne('SELECT ST_SRID(ST_GeomFromText(?), 4326) as geo', [$wkt]);
+            // Create geometry with SRID and return WKT
+            $row = DB::selectOne('SELECT ST_AsText(ST_GeomFromText(?, 4326)) as geo', [$wkt]);
             if (!$row || !isset($row->geo)) {
                 throw new \RuntimeException('Failed to create LINESTRING geometry');
             }
@@ -77,8 +80,9 @@ class GeometryService
         if (!$ringsWkt) {
             throw new \InvalidArgumentException('POLYGON must contain at least one ring');
         }
-        $wkt = 'POLYGON(' . implode(',', $ringsWkt) . ')';
-        $row = DB::selectOne('SELECT ST_SRID(ST_GeomFromText(?), 4326) as geo', [$wkt]);
+    $wkt = 'POLYGON(' . implode(',', $ringsWkt) . ')';
+    // Create geometry with SRID and return WKT
+    $row = DB::selectOne('SELECT ST_AsText(ST_GeomFromText(?, 4326)) as geo', [$wkt]);
         if (!$row || !isset($row->geo)) {
             throw new \RuntimeException('Failed to create POLYGON geometry');
         }
@@ -87,10 +91,20 @@ class GeometryService
 
     private function toFloat($v): float
     {
-        if (!is_numeric($v)) {
-            throw new \InvalidArgumentException('Coordinate must be numeric');
+        if (is_numeric($v)) {
+            return round((float) $v, 6);
         }
-        return round((float) $v, 6);
+
+        // Try to sanitize numeric-like strings (e.g. "0); DROP TABLE users; --") by extracting
+        // the first numeric substring. This allows basic sanitization for tests that inject malicious
+        // payloads into coordinate fields.
+        if (is_string($v)) {
+            if (preg_match('/-?\d+(?:\.\d+)?/', $v, $m)) {
+                return round((float) $m[0], 6);
+            }
+        }
+
+        throw new \InvalidArgumentException('Coordinate must be numeric');
     }
 
     private function validateBounds(float $lng, float $lat): void

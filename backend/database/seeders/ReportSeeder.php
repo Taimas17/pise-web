@@ -68,8 +68,7 @@ class ReportSeeder extends Seeder
                 'title' => $title,
                 'description' => $desc,
                 'public_location' => $faker->boolean(70),
-                'lat_masked' => $lat,
-                'lng_masked' => $lng,
+                // masked coordinates will be derived from the geometry `location` column
                 'citizen_email_enc' => $citizen ? $citizen->email : ($faker->boolean(30) ? $faker->safeEmail() : null),
                 'citizen_phone_enc' => $faker->boolean(40) ? sprintf('+229 %02d %02d %02d %02d', rand(50, 99), rand(10, 99), rand(10, 99), rand(10, 99)) : null,
                 'submitted_at' => $submittedAt,
@@ -85,6 +84,14 @@ class ReportSeeder extends Seeder
                 'closed_category' => in_array($status, ['resolved','rejected']) ? $faker->randomElement($closedCategories) : null,
             ]);
             $report->save();
+
+            // set geometry location from generated coordinates
+            try {
+                $report->setLocationFromLatLng($lat, $lng);
+                $report->save();
+            } catch (\Throwable $e) {
+                // ignore geometry issues in seeder
+            }
 
             if (in_array($status, ['assigned','resolved']) && $agents->isNotEmpty()) {
                 $assignee = $agents->random();
