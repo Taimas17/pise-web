@@ -16,7 +16,7 @@ const ExpenseSchema = z.object({
   note: z.string().optional(),
 });
 
-export default function BudgetTab({ chantierId, expenses = [], lots = [], summary = {} as any }: { chantierId: number; expenses?: any[]; lots?: any[]; summary?: any }){
+export default function BudgetTab({ chantierId, expenses = [], summary = {} as any }: { chantierId: number; expenses?: any[]; lots?: any[]; summary?: any }){
   const form = useForm<z.infer<typeof ExpenseSchema>>({ resolver: zodResolver(ExpenseSchema), defaultValues: { label: '', amount: 0, incurred_at: '', note: '', lot_id: '' } });
   const { mutate: createExpense } = useCreateExpense();
   const { mutate: deleteExpense } = useDeleteExpense();

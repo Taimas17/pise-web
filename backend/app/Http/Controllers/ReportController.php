@@ -301,7 +301,13 @@ class ReportController extends Controller
                 $thumbPath = 'report-photos/thumbs/'.basename($path);
                 Storage::disk('public')->put($thumbPath, (string)$img->toJpeg(80));
                 $thumb = $thumbPath;
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Thumbnail generation failed', [
+                    'report_id' => $report->id,
+                    'path' => $path,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
             $report->photos()->create([
                 'path' => $path,

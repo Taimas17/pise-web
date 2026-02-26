@@ -1,0 +1,90 @@
+# =============================================================================
+# PISE — Configuration Nginx (exemple)
+# Remplacez "votredomaine.com" par votre nom de domaine réel.
+# Deux sous-domaines recommandés :
+#   app.votredomaine.com  → Frontend (React SPA, web/dist/)
+#   api.votredomaine.com  → Backend  (Laravel, backend/public/)
+# =============================================================================
+
+# ─── Frontend (React SPA) ────────────────────────────────────────────────────
+server {
+    listen 443 ssl http2;
+    server_name app.votredomaine.com;
+
+    root /var/www/pise-web/web/dist;
+    index index.html;
+
+    # TLS — Certbot / Let's Encrypt
+    ssl_certificate     /etc/letsencrypt/live/app.votredomaine.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/app.votredomaine.com/privkey.pem;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+
+    # Sécurité
+    add_header X-Content-Type-Options "nosniff"               always;
+    add_header X-Frame-Options        "DENY"                  always;
+    add_header Referrer-Policy        "strict-origin-when-cross-origin" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    # Cache: assets hashés → 1 an
+    location ~* \.(?:js|css|woff2?|ttf|eot|svg|png|jpg|jpeg|gif|ico|webp)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        access_log off;
+    }
+
+    # HTML: jamais en cache
+    location = /index.html {
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+    }
+
+    # SPA routing: toutes les routes → index.html
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Bloquer les accès aux fichiers sensibles
+    location ~ /\.ht { deny all; }
+}
+
+# ─── Backend (Laravel API) ────────────────────────────────────────────────────
+server {
+    listen 443 ssl http2;
+    server_name api.votredomaine.com;
+
+    root /var/www/pise-web/backend/public;
+    index index.php;
+
+    ssl_certificate     /etc/letsencrypt/live/api.votredomaine.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/api.votredomaine.com/privkey.pem;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options        "DENY"    always;
+    add_header Strict-Transport-Security "max-age=31536000" always;
+
+    # Upload : 25 Mo max (couvre REPORT_MAX_PHOTO_MB × REPORT_MAX_PHOTOS)
+    client_max_body_size 25M;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass   unix:/var/run/php/php8.2-fpm.sock;
+        fastcgi_index  index.php;
+        fastcgi_param  SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include        fastcgi_params;
+        fastcgi_param  PHP_VALUE "upload_max_filesize=25M \n post_max_size=25M";
+    }
+
+    # Bloquer les accès aux fichiers sensibles
+    location ~ /\.ht { deny all; }
+    location ~ /\.env { deny all; }
+}
+
+# ─── Redirections HTTP → HTTPS ───────────────────────────────────────────────
+server {
+    listen 80;
+    server_name app.votredomaine.com api.votredomaine.com;
+    return 301 https://$host$request_uri;
+}

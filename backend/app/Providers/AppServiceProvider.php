@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Http\Request;
 use Illuminate\Cache\RateLimiting\Limit;
 use App\Models\Lot;
@@ -21,6 +22,12 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Force HTTPS scheme in production so all generated URLs use https://
+        // and Sanctum/session cookies are issued with the Secure flag.
+        if ($this->app->environment('production')) {
+            URL::forceScheme('https');
+        }
+
         RateLimiter::for('reports', function (Request $request) {
             return [
                 Limit::perMinute((int) env('REPORTS_RATE_LIMIT_PER_MIN', 20))->by($request->ip()),

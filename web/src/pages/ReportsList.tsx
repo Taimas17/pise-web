@@ -5,6 +5,7 @@ import FilterPanel, { FilterDescriptor } from '@/components/filters/FilterPanel'
 import DataList from '@/components/lists/DataList';
 import { ReportCard } from '@/components/reports/ReportCard';
 import { useReports } from '@/hooks/api/useReports';
+import { keepPreviousData } from '@tanstack/react-query';
 import { useInfraTypes } from '@/hooks/api/useInfraTypes';
 import type { ReportFilters } from '@/services/types';
 import { Button } from '@/components/ui/button';
@@ -50,7 +51,7 @@ export default function ReportsList(){
     return ef;
   }, [filters]);
 
-  const { data, isLoading, error } = useReports(effectiveFilters, { keepPreviousData: true });
+  const { data, isLoading, error } = useReports(effectiveFilters, { placeholderData: keepPreviousData });
 
   async function exportFile(kind: 'pdf' | 'excel' | 'geojson'){
     const ts = new Date();

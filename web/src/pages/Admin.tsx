@@ -89,7 +89,7 @@ function UsersManager(){
   const [users, setUsers] = useState<any[]>([]);
   const [role, setRole] = useState('');
   const [q, setQ] = useState('');
-  const [page, setPage] = useState(1);
+  const [page] = useState(1);
   const isMobile = useIsMobile();
   async function load(){ try{ await sanctumCsrf(); const { data } = await api.get('/users', { params: { role: role||undefined, q: q||undefined, page } }); setUsers(data.data || data); }catch(err:any){ console.error('Failed to load users', err); if(err?.response?.status===401){ /* unauthorized */ } }}
   useEffect(()=>{ load(); }, [role, q, page]);

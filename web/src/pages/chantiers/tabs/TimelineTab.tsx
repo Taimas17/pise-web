@@ -20,7 +20,7 @@ const EtapeSchema = z.object({
   order_index: z.coerce.number().int().min(0),
 }).refine(d => new Date(d.planned_end_at) >= new Date(d.planned_start_at), { path: ['planned_end_at'], message: 'La fin doit être ≥ au début' });
 
-export default function TimelineTab({ chantierId, etapes = [], lots = [] }: { chantierId: number; etapes?: any[]; lots?: any[] }){
+export default function TimelineTab({ chantierId, etapes = [] }: { chantierId: number; etapes?: any[]; lots?: any[] }){
   const form = useForm<z.infer<typeof EtapeSchema>>({ resolver: zodResolver(EtapeSchema), defaultValues: { name: '', description: '', planned_start_at: '', planned_end_at: '', status: 'planned', progress_pct: 0, order_index: 0, lot_id: '' } });
   const { mutate: createEtape } = useCreateEtape();
   const { mutate: updateEtape } = useUpdateEtape();

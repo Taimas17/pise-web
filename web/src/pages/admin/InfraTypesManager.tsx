@@ -12,7 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 
 export default function InfraTypesManager(){
   const { data: types } = useInfraTypes();
-  const { mutate: createType, isPending: creating } = useCreateInfraType();
+  const { mutate: createType } = useCreateInfraType();
   const { mutate: updateType } = useUpdateInfraType();
   const { mutate: deleteType, isPending: deleting } = useDeleteInfraType();
 

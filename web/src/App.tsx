@@ -1,30 +1,29 @@
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
-import { useEffect, useState } from "react";
-import SignalementForm from "./pages/SignalementForm";
-import ReportsList from "./pages/ReportsList";
-import ReportDetail from "./pages/ReportDetail";
-import Dashboard from "./pages/Dashboard";
-import Admin from "./pages/Admin";
-import Account from "./pages/Account";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Toaster } from "./components/ui/sonner";
 import { Button } from "./components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "./components/ui/alert";
-import { AlertCircle, Menu } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { api } from "./lib/api";
-import ChantiersList from "./pages/ChantiersList";
-import ChantierDetail from "./pages/chantiers/ChantierDetail";
-import { useIsMobile } from "./hooks/use-mobile";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./components/ui/sheet";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "next-themes";
-import FiltersExample from "./pages/examples/FiltersExample";
-import StatsExample from "./pages/examples/StatsExample";
-import TableExample from "./pages/examples/TableExample";
-import ChartsExample from "./pages/examples/ChartsExample";
-import DialogsExample from "./pages/examples/DialogsExample";
-import SectionsExample from "./pages/examples/SectionsExample";
-import DarkCheck from "./pages/examples/DarkCheck";
 import Navbar from "./components/navigation/Navbar";
+
+const SignalementForm = lazy(() => import("./pages/SignalementForm"));
+const ReportsList     = lazy(() => import("./pages/ReportsList"));
+const ReportDetail    = lazy(() => import("./pages/ReportDetail"));
+const Dashboard       = lazy(() => import("./pages/Dashboard"));
+const Admin           = lazy(() => import("./pages/Admin"));
+const Account         = lazy(() => import("./pages/Account"));
+const ChantiersList   = lazy(() => import("./pages/ChantiersList"));
+const ChantierDetail  = lazy(() => import("./pages/chantiers/ChantierDetail"));
+const FiltersExample  = lazy(() => import("./pages/examples/FiltersExample"));
+const StatsExample    = lazy(() => import("./pages/examples/StatsExample"));
+const TableExample    = lazy(() => import("./pages/examples/TableExample"));
+const ChartsExample   = lazy(() => import("./pages/examples/ChartsExample"));
+const DialogsExample  = lazy(() => import("./pages/examples/DialogsExample"));
+const SectionsExample = lazy(() => import("./pages/examples/SectionsExample"));
+const DarkCheck       = lazy(() => import("./pages/examples/DarkCheck"));
 
 const navItems = [
   { to: "/signaler", label: "Signaler" },
@@ -36,7 +35,6 @@ const navItems = [
 ];
 
 export default function App() {
-  const isMobile = useIsMobile();
   const [backendHealthy, setBackendHealthy] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -83,25 +81,27 @@ export default function App() {
             <div className="min-h-screen flex flex-col">
               <Navbar items={navItems} />
               <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/signaler" element={<SignalementForm />} />
-                  <Route path="/suivi" element={<ReportsList />} />
-                  <Route path="/suivi/:id" element={<ReportDetail />} />
-                  <Route path="/chantiers" element={<ChantiersList />} />
-                  <Route path="/chantiers/:id" element={<ChantierDetail />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/admin" element={<Admin />} />
-                  <Route path="/compte" element={<Account />} />
-                  {/* Examples (stories) */}
-                  <Route path="/examples/filters" element={<FiltersExample />} />
-                  <Route path="/examples/stats" element={<StatsExample />} />
-                  <Route path="/examples/table" element={<TableExample />} />
-                  <Route path="/examples/charts" element={<ChartsExample />} />
-                  <Route path="/examples/dialogs" element={<DialogsExample />} />
-                  <Route path="/examples/sections" element={<SectionsExample />} />
-                  <Route path="/examples/dark-check" element={<DarkCheck />} />
-                </Routes>
+                <Suspense fallback={<div className="flex items-center justify-center h-40 text-gray-400">Chargement…</div>}>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/signaler" element={<SignalementForm />} />
+                    <Route path="/suivi" element={<ReportsList />} />
+                    <Route path="/suivi/:id" element={<ReportDetail />} />
+                    <Route path="/chantiers" element={<ChantiersList />} />
+                    <Route path="/chantiers/:id" element={<ChantierDetail />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/admin" element={<Admin />} />
+                    <Route path="/compte" element={<Account />} />
+                    {/* Examples (stories) */}
+                    <Route path="/examples/filters" element={<FiltersExample />} />
+                    <Route path="/examples/stats" element={<StatsExample />} />
+                    <Route path="/examples/table" element={<TableExample />} />
+                    <Route path="/examples/charts" element={<ChartsExample />} />
+                    <Route path="/examples/dialogs" element={<DialogsExample />} />
+                    <Route path="/examples/sections" element={<SectionsExample />} />
+                    <Route path="/examples/dark-check" element={<DarkCheck />} />
+                  </Routes>
+                </Suspense>
               </main>
               <footer className="border-t text-center text-sm text-gray-500 py-4">© {new Date().getFullYear()} PISE</footer>
             </div>

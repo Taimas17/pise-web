@@ -33,11 +33,6 @@ Route::prefix('auth')->middleware([
     Route::get('/me', [AuthController::class, 'me'])->middleware('auth:sanctum');
 });
 
-// Temporary debug route to fetch zones without auth for local troubleshooting.
-// Remove once UTF-8 / response issues are resolved.
-Route::get('/_debug/zones', function () {
-     return response()->json(\App\Models\Zone::all());
-});
 
 Route::middleware(['throttle:reports'])->group(function () {
     Route::post('/reports', [ReportController::class, 'store']);

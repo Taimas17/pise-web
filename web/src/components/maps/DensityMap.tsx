@@ -1,8 +1,9 @@
 import { MapContainer, TileLayer, CircleMarker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { Report } from '@/services/types';
+import { MAP_DEFAULT_LAT, MAP_DEFAULT_LNG, MAP_ZOOM_COMMUNE } from '@/lib/mapConfig';
 
-export default function DensityMap({ reports, center = [14.6937, -17.4441], zoom = 12 }: { reports: Report[]; center?: [number, number]; zoom?: number }){
+export default function DensityMap({ reports, center = [MAP_DEFAULT_LAT, MAP_DEFAULT_LNG], zoom = MAP_ZOOM_COMMUNE }: { reports: Report[]; center?: [number, number]; zoom?: number }){
   return (
     <MapContainer center={center} zoom={zoom} style={{ height: '100%', width: '100%' }}>
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />

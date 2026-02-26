@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { apiService } from '@/services/api.service';
 import { useAuthStore } from '@/stores/useAuthStore';
 import type { User } from '@/services/types';
@@ -9,12 +10,15 @@ export const authKeys = {
 
 export function useMe() {
   const setUser = useAuthStore(s => s.setUser);
-  return useQuery<User | null>({
+  const query = useQuery<User | null>({
     queryKey: authKeys.me,
     queryFn: () => apiService.auth.me().catch(() => null),
     staleTime: 1000 * 60 * 5,
-    onSuccess(user) { setUser(user); },
   });
+  useEffect(() => {
+    if (query.data !== undefined) setUser(query.data);
+  }, [query.data, setUser]);
+  return query;
 }
 
 export function useLogin() {

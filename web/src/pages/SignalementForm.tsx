@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import Map from "../components/Map";
+import { MAP_DEFAULT_LAT, MAP_DEFAULT_LNG } from "../lib/mapConfig";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
@@ -12,8 +13,10 @@ import { Skeleton } from "../components/ui/skeleton";
 import { FileText, Image as ImageIcon, MapPin } from "lucide-react";
 
 export default function SignalementForm(){
-  const [lat, setLat] = useState<number | null>(null);
-  const [lng, setLng] = useState<number | null>(null);
+  // Initialisé sur le centre de Nikki ; mis à jour dès que le GPS répond
+  const [lat, setLat] = useState<number>(MAP_DEFAULT_LAT);
+  const [lng, setLng] = useState<number>(MAP_DEFAULT_LNG);
+  const [gpsLocated, setGpsLocated] = useState(false);
   const [types, setTypes] = useState<any[]>([]);
   const [files, setFiles] = useState<File[]>([]);
   const [sending, setSending] = useState(false);
@@ -22,12 +25,15 @@ export default function SignalementForm(){
   useEffect(()=>{ (async()=>{
     try { const { data } = await api.get('/infrastructure-types'); setTypes(data); } catch (_e) { /* ignore types load error */ }
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(pos => { setLat(pos.coords.latitude); setLng(pos.coords.longitude); }, ()=>{}, { enableHighAccuracy: true });
+      navigator.geolocation.getCurrentPosition(
+        pos => { setLat(pos.coords.latitude); setLng(pos.coords.longitude); setGpsLocated(true); },
+        ()  => { /* GPS indisponible — on garde le centre de Nikki par défaut */ },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
     }
   })(); },[]);
 
   async function onSubmit(){
-    if (lat == null || lng == null) { toast('Localisation non disponible'); return; }
     setSending(true);
     const data = new FormData();
     data.append('infrastructure_type_id', form.infrastructure_type_id);
@@ -74,7 +80,6 @@ export default function SignalementForm(){
     return ()=> clearInterval(iv);
   },[]);
 
-  if (lat == null || lng == null) return <p>Chargement de la géolocalisation…</p>;
 
   return (
     <div className="grid gap-4 max-w-2xl">
@@ -116,10 +121,16 @@ export default function SignalementForm(){
       <Card className="card-hover">
         <CardHeader className="border-b">
           <CardTitle className="flex items-center gap-2"><MapPin className="size-4"/> Localisation</CardTitle>
-          <CardDescription>Déplacez le marqueur pour ajuster</CardDescription>
+          <CardDescription className="flex items-center gap-2">
+            Déplacez le marqueur pour ajuster
+            {gpsLocated
+              ? <span className="text-green-600 font-medium text-xs">📍 GPS actif</span>
+              : <span className="text-amber-600 font-medium text-xs">⚠️ Position par défaut (Nikki) — cliquez sur la carte pour ajuster</span>
+            }
+          </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 pt-4">
-          <Map lat={lat} lng={lng} onPick={(la,lo)=>{ setLat(la); setLng(lo); }} className="h-[250px] md:h-[350px]"/>
+          <Map lat={lat} lng={lng} onPick={(la,lo)=>{ setLat(la); setLng(lo); setGpsLocated(true); }} className="h-[250px] md:h-[350px]"/>
           <label className="flex items-center gap-2 text-sm">
             <input id="pub" type="checkbox" checked={form.public_location} onChange={e=>setForm(f=>({ ...f, public_location: e.target.checked }))} />
             <span>Utiliser la précision exacte (sinon position masquée)</span>

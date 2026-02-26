@@ -12,7 +12,7 @@ export const reportKeys = {
 
 export function useReports(
   filters: ReportFilters = {},
-  options?: UseQueryOptions<PaginatedResponse<Report>>
+  options?: Omit<UseQueryOptions<PaginatedResponse<Report>>, 'queryKey' | 'queryFn'>
 ) {
   return useQuery({
     queryKey: reportKeys.list(filters),
@@ -21,7 +21,7 @@ export function useReports(
   });
 }
 
-export function useReport(id: number, options?: UseQueryOptions<Report>) {
+export function useReport(id: number, options?: Omit<UseQueryOptions<Report>, 'queryKey' | 'queryFn'>) {
   return useQuery({
     queryKey: reportKeys.detail(id),
     queryFn: () => apiService.reports.get(id),
