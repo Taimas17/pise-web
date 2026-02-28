@@ -5,8 +5,8 @@
 ```
 Internet
   │
-  ├── app.votredomaine.com   →  Nginx → web/dist/         (React SPA)
-  └── api.votredomaine.com   →  Nginx → backend/public/   (Laravel API)
+  ├── pise.paperlabbj.com   →  Nginx → web/dist/         (React SPA)
+  └── api.paperlabbj.com    →  Nginx → backend/public/   (Laravel API)
                                           │
                                      PHP 8.2-FPM
                                           │
@@ -35,7 +35,7 @@ Extensions PHP requises : `pdo_mysql`, `mbstring`, `openssl`, `tokenizer`, `xml`
 ### 1. Cloner le dépôt
 
 ```bash
-git clone https://github.com/VOTRE_COMPTE/pise-web.git /var/www/pise-web
+git clone https://github.com/Taimas17/pise-web.git /var/www/pise-web
 cd /var/www/pise-web
 ```
 
@@ -44,25 +44,24 @@ cd /var/www/pise-web
 **Backend :**
 ```bash
 cp backend/.env.production.example backend/.env
-# Éditez avec vos vraies valeurs :
 nano backend/.env
 ```
 
-Variables **obligatoires** à modifier :
+Variables **obligatoires** à renseigner :
 - `APP_KEY` — générer : `php artisan key:generate --show`
-- `DB_PASSWORD` — mot de passe MySQL fort
+- `DB_PASSWORD` — mot de passe MySQL fort (≥ 16 caractères)
 - `COLUMN_ENCRYPTION_KEY` — générer : `php -r "echo 'base64:'.base64_encode(random_bytes(32));"`
-- `APP_URL` — `https://api.votredomaine.com`
-- `SESSION_DOMAIN` — `.votredomaine.com`
-- `SANCTUM_STATEFUL_DOMAINS` — `app.votredomaine.com`
-- `CORS_ALLOWED_ORIGINS` — `https://app.votredomaine.com`
+
+Variables **pré-configurées** pour `paperlabbj.com` (vérifier si correct) :
+- `APP_URL=https://api.paperlabbj.com`
+- `SESSION_DOMAIN=.paperlabbj.com`
+- `SANCTUM_STATEFUL_DOMAINS=pise.paperlabbj.com`
+- `CORS_ALLOWED_ORIGINS=https://pise.paperlabbj.com`
 
 **Frontend :**
 ```bash
 cp web/.env.production.example web/.env
-# Éditez VITE_API_URL :
-nano web/.env
-# VITE_API_URL=https://api.votredomaine.com
+# VITE_API_URL=https://api.paperlabbj.com  (déjà configuré)
 ```
 
 ### 3. Déployer
@@ -84,11 +83,7 @@ Le script effectue automatiquement :
 ### 4. Configurer Nginx
 
 ```bash
-# Copiez l'exemple et adaptez votre domaine
 cp scripts/nginx.conf.example /etc/nginx/sites-available/pise
-# Remplacez "votredomaine.com" dans le fichier
-sed -i 's/votredomaine.com/VOTRE_DOMAINE/g' /etc/nginx/sites-available/pise
-
 ln -s /etc/nginx/sites-available/pise /etc/nginx/sites-enabled/
 nginx -t && systemctl reload nginx
 ```
@@ -96,7 +91,7 @@ nginx -t && systemctl reload nginx
 ### 5. Certificats TLS (Let's Encrypt)
 
 ```bash
-certbot --nginx -d app.votredomaine.com -d api.votredomaine.com
+certbot --nginx -d pise.paperlabbj.com -d api.paperlabbj.com
 ```
 
 ### 6. Permissions fichiers
@@ -129,14 +124,14 @@ FLUSH PRIVILEGES;
 - [ ] `COLUMN_ENCRYPTION_KEY` non vide (généré)
 - [ ] `DB_PASSWORD` fort (≥ 16 caractères aléatoires)
 - [ ] `SESSION_SECURE_COOKIE=true`
-- [ ] `SESSION_DOMAIN` configuré sur votre domaine
-- [ ] `CORS_ALLOWED_ORIGINS` restreint à votre frontend uniquement
-- [ ] HTTPS activé sur les deux sous-domaines
+- [ ] `SESSION_DOMAIN=.paperlabbj.com` configuré
+- [ ] `CORS_ALLOWED_ORIGINS=https://pise.paperlabbj.com` (frontend uniquement)
+- [ ] HTTPS activé : `pise.paperlabbj.com` + `api.paperlabbj.com`
 - [ ] `LOG_LEVEL=error` (pas `debug`)
-- [ ] Fichier `.env` non accessible publiquement (Nginx : `location ~ /\.env { deny all; }`)
-- [ ] `storage/` protégé en écriture pour le webuser uniquement
+- [ ] Fichier `.env` non accessible publiquement (Nginx bloque `/\.env`)
+- [ ] `storage/` en écriture pour `www-data` uniquement
 - [ ] Pas de `vendor/` exposé publiquement
-- [ ] MySQL : utilisateur dédié (pas `root`)
+- [ ] MySQL : utilisateur `pise_user` dédié (pas `root`)
 
 ---
 
@@ -155,8 +150,8 @@ php artisan migrate
 # Voir les logs
 tail -f backend/storage/logs/laravel.log
 
-# Test de santé
-curl https://api.votredomaine.com/api/health
+# Test de santé API
+curl https://api.paperlabbj.com/api/health
 # Réponse attendue: {"status":"ok","timestamp":"...","environment":"production"}
 ```
 
@@ -181,6 +176,6 @@ bash scripts/deploy.sh                  # Avec migration
 | 403 sur `/storage/` | `php artisan storage:link` |
 | 500 sur toutes les pages | Vérifier `storage/logs/laravel.log` |
 | CORS bloqué | Vérifier `CORS_ALLOWED_ORIGINS` et `SANCTUM_STATEFUL_DOMAINS` |
-| Cookie session perdu | Vérifier `SESSION_DOMAIN` et `SESSION_SECURE_COOKIE` |
+| Cookie session perdu | Vérifier `SESSION_DOMAIN=.paperlabbj.com` et `SESSION_SECURE_COOKIE=true` |
 | Page blanche React | Vérifier `VITE_API_URL` dans `web/.env` avant build |
-| Refresh page → 404 | Vérifier la règle `try_files` Nginx ou `.htaccess` Apache |
+| Refresh page → 404 | Vérifier la règle `try_files` Nginx |

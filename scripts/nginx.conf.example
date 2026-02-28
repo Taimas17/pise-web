@@ -1,22 +1,21 @@
 # =============================================================================
-# PISE — Configuration Nginx (exemple)
-# Remplacez "votredomaine.com" par votre nom de domaine réel.
-# Deux sous-domaines recommandés :
-#   app.votredomaine.com  → Frontend (React SPA, web/dist/)
-#   api.votredomaine.com  → Backend  (Laravel, backend/public/)
+# PISE — Configuration Nginx
+# Domaine : paperlabbj.com
+#   pise.paperlabbj.com  → Frontend (React SPA, web/dist/)
+#   api.paperlabbj.com   → Backend  (Laravel API, backend/public/)
 # =============================================================================
 
 # ─── Frontend (React SPA) ────────────────────────────────────────────────────
 server {
     listen 443 ssl http2;
-    server_name app.votredomaine.com;
+    server_name pise.paperlabbj.com;
 
     root /var/www/pise-web/web/dist;
     index index.html;
 
     # TLS — Certbot / Let's Encrypt
-    ssl_certificate     /etc/letsencrypt/live/app.votredomaine.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/app.votredomaine.com/privkey.pem;
+    ssl_certificate     /etc/letsencrypt/live/pise.paperlabbj.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/pise.paperlabbj.com/privkey.pem;
     ssl_protocols       TLSv1.2 TLSv1.3;
 
     # Sécurité
@@ -49,13 +48,13 @@ server {
 # ─── Backend (Laravel API) ────────────────────────────────────────────────────
 server {
     listen 443 ssl http2;
-    server_name api.votredomaine.com;
+    server_name api.paperlabbj.com;
 
     root /var/www/pise-web/backend/public;
     index index.php;
 
-    ssl_certificate     /etc/letsencrypt/live/api.votredomaine.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/api.votredomaine.com/privkey.pem;
+    ssl_certificate     /etc/letsencrypt/live/api.paperlabbj.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/api.paperlabbj.com/privkey.pem;
     ssl_protocols       TLSv1.2 TLSv1.3;
 
     add_header X-Content-Type-Options "nosniff" always;
@@ -78,13 +77,13 @@ server {
     }
 
     # Bloquer les accès aux fichiers sensibles
-    location ~ /\.ht { deny all; }
+    location ~ /\.ht  { deny all; }
     location ~ /\.env { deny all; }
 }
 
 # ─── Redirections HTTP → HTTPS ───────────────────────────────────────────────
 server {
     listen 80;
-    server_name app.votredomaine.com api.votredomaine.com;
+    server_name pise.paperlabbj.com api.paperlabbj.com;
     return 301 https://$host$request_uri;
 }
