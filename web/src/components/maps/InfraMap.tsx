@@ -17,23 +17,21 @@ const TYPE_PALETTE = [
   '#06b6d4', '#f97316', '#84cc16', '#ec4899', '#6366f1',
 ];
 
-type CriticalityKey = 'critical' | 'high' | 'medium' | 'low';
-type StatusKey      = 'pending' | 'approved' | 'assigned' | 'in_progress' | 'resolved' | 'rejected';
+type CriticalityKey = 'haute' | 'moyenne' | 'faible';
+type StatusKey      = 'draft' | 'pending_review' | 'assigned' | 'resolved' | 'rejected';
 
 const CRITICALITY_CONFIG: Record<CriticalityKey, { border: string; size: number; label: string }> = {
-  critical: { border: '#dc2626', size: 32, label: 'Critique' },
-  high:     { border: '#d97706', size: 26, label: 'Haute'    },
-  medium:   { border: '#ca8a04', size: 22, label: 'Moyenne'  },
-  low:      { border: '#16a34a', size: 18, label: 'Basse'    },
+  haute:   { border: '#dc2626', size: 30, label: 'Haute'   },
+  moyenne: { border: '#d97706', size: 22, label: 'Moyenne' },
+  faible:  { border: '#16a34a', size: 16, label: 'Faible'  },
 };
 
 const STATUS_CONFIG: Record<StatusKey, { color: string; label: string }> = {
-  pending:     { color: '#6b7280', label: 'En attente' },
-  approved:    { color: '#3b82f6', label: 'Approuvé'   },
-  assigned:    { color: '#8b5cf6', label: 'Assigné'    },
-  in_progress: { color: '#f97316', label: 'En cours'   },
-  resolved:    { color: '#10b981', label: 'Résolu'     },
-  rejected:    { color: '#ef4444', label: 'Rejeté'     },
+  draft:          { color: '#9ca3af', label: 'Brouillon'    },
+  pending_review: { color: '#6b7280', label: 'En attente'   },
+  assigned:       { color: '#8b5cf6', label: 'Assigné'      },
+  resolved:       { color: '#10b981', label: 'Résolu'       },
+  rejected:       { color: '#ef4444', label: 'Rejeté'       },
 };
 
 function isValidCriticality(s: string): s is CriticalityKey {
@@ -177,21 +175,24 @@ export default function InfraMap({
           />
 
           {filtered.map(r => {
-            const pos      = r.masked_location ?? r.location;
+            const lat = r.lat_masked ?? r.latitude;
+            const lng = r.lng_masked ?? r.longitude;
+            if (lat == null || lng == null) return null;
+
             const color    = typeColorMap[r.infrastructure_type_id] ?? TYPE_PALETTE[0];
             const icon     = createMarkerIcon(color, r.criticality);
             const statusCfg = isValidStatus(r.status)
               ? STATUS_CONFIG[r.status]
-              : STATUS_CONFIG.pending;
+              : STATUS_CONFIG.pending_review;
             const critCfg   = isValidCriticality(r.criticality)
               ? CRITICALITY_CONFIG[r.criticality]
-              : CRITICALITY_CONFIG.medium;
+              : CRITICALITY_CONFIG.moyenne;
             const typeName  = r.infrastructure_type?.name ?? `Type ${r.infrastructure_type_id}`;
 
             return (
               <Marker
                 key={r.id}
-                position={[pos.lat, pos.lng] as [number, number]}
+                position={[lat, lng] as [number, number]}
                 icon={icon}
               >
                 <Popup minWidth={210}>

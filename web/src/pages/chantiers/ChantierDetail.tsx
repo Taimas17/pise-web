@@ -25,16 +25,16 @@ export default function ChantierDetail(){
       <Breadcrumbs items={[{ label: 'Chantiers', href: '/chantiers' }, { label: `Chantier #${chantier.id}` }]} />
 
       <PageHeader
-        title={`Chantier #${chantier.id} — ${chantier.name || ''}`}
+        title={`Chantier #${chantier.id} — ${chantier.title || ''}`}
         actions={[
           <div key="status" className="flex items-center gap-2">
             <Badge className="bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-900/30 dark:text-sky-300">{chantier.status}</Badge>
-            <span className="text-sm text-muted-foreground hidden sm:inline">{chantier.progress ?? 0}%</span>
+            <span className="text-sm text-muted-foreground hidden sm:inline">{chantier.progress_pct ?? 0}%</span>
           </div>
         ]}
       />
 
-      <Progress value={Number(chantier.progress ?? 0)} />
+      <Progress value={Number(chantier.progress_pct ?? 0)} />
 
       <Tabs defaultValue="timeline">
         <TabsList>
@@ -55,7 +55,7 @@ export default function ChantierDetail(){
         </div></TabsContent>
 
         <TabsContent value="budget"><div className="animate-fade-in">
-          <BudgetTab chantierId={chantier.id} expenses={chantier.expenses} lots={chantier.lots} summary={{ budget_planned: chantier.budget_total, budget_committed: undefined, budget_actual: undefined }} />
+          <BudgetTab chantierId={chantier.id} expenses={chantier.expenses} lots={chantier.lots} summary={{ budget_planned: chantier.budget_planned, budget_committed: chantier.budget_committed, budget_actual: chantier.budget_actual }} />
         </div></TabsContent>
 
         <TabsContent value="documents"><div className="animate-fade-in">

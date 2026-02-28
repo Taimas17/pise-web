@@ -8,12 +8,13 @@ export default function DensityMap({ reports, center = [MAP_DEFAULT_LAT, MAP_DEF
     <MapContainer center={center} zoom={zoom} style={{ height: '100%', width: '100%' }}>
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
       {reports.map((r) => {
-        const pos = (r.masked_location || r.location);
-        if (!pos) return null;
-        const color = r.criticality === 'critical' ? '#ef4444' : r.criticality === 'high' ? '#f59e0b' : r.criticality === 'medium' ? '#22c55e' : '#10b981';
-        const radius = r.criticality === 'critical' ? 16 : r.criticality === 'high' ? 12 : r.criticality === 'medium' ? 9 : 6;
+        const lat = r.lat_masked ?? r.latitude;
+        const lng = r.lng_masked ?? r.longitude;
+        if (lat == null || lng == null) return null;
+        const color  = r.criticality === 'haute'   ? '#ef4444' : r.criticality === 'moyenne' ? '#f59e0b' : '#22c55e';
+        const radius = r.criticality === 'haute'   ? 16        : r.criticality === 'moyenne' ? 10       : 6;
         return (
-          <CircleMarker key={r.id} center={[pos.lat, pos.lng]} pathOptions={{ color, fillColor: color, fillOpacity: 0.35 }} radius={radius} />
+          <CircleMarker key={r.id} center={[lat, lng]} pathOptions={{ color, fillColor: color, fillOpacity: 0.35 }} radius={radius} />
         );
       })}
     </MapContainer>

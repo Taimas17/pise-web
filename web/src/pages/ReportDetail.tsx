@@ -39,7 +39,8 @@ export default function ReportDetail(){
 
   if (isLoading || !report) return <LoadingState type="form" count={6} />;
 
-  const location = report.masked_location || report.location;
+  const lat = report.lat_masked ?? report.latitude;
+  const lng = report.lng_masked ?? report.longitude;
 
   function openConfirm(action: 'approve' | 'reject'){
     setConfirmAction(action);
@@ -75,14 +76,14 @@ export default function ReportDetail(){
         actions={actions}
       />
 
-      {location && (
+      {lat != null && lng != null && (
         <Card className="card-hover">
           <CardHeader>
             <CardTitle>Localisation</CardTitle>
-            <CardDescription>Coordonnées {report.masked_location ? 'masquées' : 'exactes'}</CardDescription>
+            <CardDescription>Coordonnées {report.lat_masked != null ? 'masquées' : 'exactes'}</CardDescription>
           </CardHeader>
           <CardContent>
-            <Map lat={location.lat} lng={location.lng} />
+            <Map lat={lat} lng={lng} />
           </CardContent>
         </Card>
       )}
@@ -134,8 +135,8 @@ export default function ReportDetail(){
             <CardContent className="space-y-3">
               <Textarea placeholder="Commentaire" value={comment} onChange={(e) => setComment(e.target.value)} />
               <div className="grid grid-cols-2 gap-2">
-                <Button onClick={() => openConfirm('approve')} disabled={reviewing || report.status !== 'pending'}>Approuver</Button>
-                <Button variant="destructive" onClick={() => openConfirm('reject')} disabled={reviewing || report.status !== 'pending'}>Rejeter</Button>
+                <Button onClick={() => openConfirm('approve')} disabled={reviewing || report.status !== 'pending_review'}>Approuver</Button>
+                <Button variant="destructive" onClick={() => openConfirm('reject')} disabled={reviewing || report.status !== 'pending_review'}>Rejeter</Button>
               </div>
               <Button variant="outline" onClick={() => setAssignOpen(true)} disabled={assigning}>Assigner</Button>
               <Button variant="secondary" onClick={() => setResolveOpen(true)} disabled={updating || report.status === 'resolved'}>Marquer résolu</Button>

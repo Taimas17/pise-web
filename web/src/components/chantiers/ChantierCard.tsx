@@ -18,15 +18,15 @@ export type ChantierCardProps = {
 };
 
 export const ChantierCard = memo(function ChantierCard({ chantier, onClick, variant = 'compact' }: ChantierCardProps){
-  const progress = Math.max(0, Math.min(100, Math.round(chantier.progress ?? 0)));
-  const budget = chantier.budget_total ?? 0;
+  const progress = Math.max(0, Math.min(100, Math.round(Number(chantier.progress_pct ?? 0))));
+  const budget = Number(chantier.budget_planned ?? 0);
   const statusClass = statusColors[chantier.status] || 'bg-gray-100 text-gray-700';
 
   return (
     <Card className="card-hover cursor-pointer" onClick={onClick}>
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-base">{chantier.name}</CardTitle>
+          <CardTitle className="text-base">{chantier.title}</CardTitle>
           <span className={`px-2 py-1 rounded text-xs ${statusClass}`}>{chantier.status}</span>
         </div>
       </CardHeader>

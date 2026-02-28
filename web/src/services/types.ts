@@ -52,8 +52,8 @@ export interface StatusHistory {
   user?: User;
 }
 
-export type ReportCriticality = 'low' | 'medium' | 'high' | 'critical';
-export type ReportStatus = 'pending' | 'approved' | 'assigned' | 'in_progress' | 'resolved' | 'rejected';
+export type ReportCriticality = 'faible' | 'moyenne' | 'haute';
+export type ReportStatus = 'draft' | 'pending_review' | 'assigned' | 'resolved' | 'rejected';
 
 export interface Report {
   id: number;
@@ -63,9 +63,14 @@ export interface Report {
   zone?: Zone;
   criticality: ReportCriticality;
   status: ReportStatus;
+  title?: string;
   description: string;
-  location: { lat: number; lng: number };
-  masked_location?: { lat: number; lng: number };
+  /** Flat decimal coordinates returned by the API */
+  latitude: number | null;
+  longitude: number | null;
+  lat_masked?: number | null;
+  lng_masked?: number | null;
+  public_location?: boolean;
   contact_email?: string;
   contact_phone?: string;
   sla_due_at?: string;
@@ -79,13 +84,23 @@ export interface Report {
 
 export interface Chantier {
   id: number;
-  name: string;
+  title: string;
   description?: string;
-  status: 'planned' | 'in_progress' | 'paused' | 'completed' | 'cancelled' | string;
-  start_date?: string;
-  end_date?: string;
-  progress?: number;
-  budget_total?: number;
+  infrastructure_type_id?: number;
+  infrastructure_type?: InfrastructureType;
+  zone_id?: number;
+  zone?: Zone;
+  status: 'planned' | 'in_progress' | 'on_hold' | 'completed' | 'cancelled' | string;
+  planned_start_at?: string;
+  planned_end_at?: string;
+  actual_start_at?: string;
+  actual_end_at?: string;
+  progress_pct?: number;
+  budget_planned?: number;
+  budget_committed?: number;
+  budget_actual?: number;
+  manager_user_id?: number;
+  manager?: User;
   lots?: Lot[];
   etapes?: Etape[];
   expenses?: Expense[];

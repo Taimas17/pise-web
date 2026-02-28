@@ -1,1 +1,0 @@
-import{u as e,a as s}from"./api.service-HRJrWeP4.js";import"./index-Bddcd1up.js";const r={list:["infraTypes","list"]};function a(){return e({queryKey:r.list,queryFn:()=>s.infraTypes.list(),staleTime:1e3*60*10})}export{a as u};
