@@ -1,0 +1,12 @@
+{
+  "name": "PISE",
+  "short_name": "PISE",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0ea5e9",
+  "lang": "fr",
+  "icons": [
+    { "src": "/vite.svg", "sizes": "192x192", "type": "image/svg+xml" }
+  ]
+}

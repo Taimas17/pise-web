@@ -1,6 +1,6 @@
 # Node
 /web/node_modules/
-/web/dist/
+# web/dist/ est versionné pour déploiement sur hébergement mutualisé (sans Node)
 /web/.vite/
 /web/.next/
 
