@@ -1,17 +1,24 @@
 # Guide de déploiement — PISE
 
-## Architecture de production
+## Architecture de production (monodomaine)
 
 ```
 Internet
   │
-  ├── pise.paperlabbj.com   →  Nginx → web/dist/         (React SPA)
-  └── api.paperlabbj.com    →  Nginx → backend/public/   (Laravel API)
+  └── paperlabbj.com
+        │
+        ├── /          →  Nginx → web/dist/                (React SPA)
+        ├── /api/*     →  Nginx → backend/public/index.php (Laravel API)
+        ├── /sanctum/* →  Nginx → backend/public/index.php (CSRF Sanctum)
+        └── /storage/* →  Nginx → backend/storage/app/public/
                                           │
                                      PHP 8.2-FPM
                                           │
                                        MySQL 8+
 ```
+
+> **Avantage monodomaine :** frontend et backend partagent la même origine
+> → zéro problème CORS, gestion des cookies session simplifiée.
 
 ---
 
@@ -47,24 +54,34 @@ cp backend/.env.production.example backend/.env
 nano backend/.env
 ```
 
-Variables **obligatoires** à renseigner :
-- `APP_KEY` — générer : `php artisan key:generate --show`
-- `DB_PASSWORD` — mot de passe MySQL fort (≥ 16 caractères)
-- `COLUMN_ENCRYPTION_KEY` — générer : `php -r "echo 'base64:'.base64_encode(random_bytes(32));"`
+Variables **obligatoires** à renseigner (les 3 clés à générer) :
+
+```bash
+# 1. Clé d'application Laravel
+php artisan key:generate --show
+# → coller la valeur dans APP_KEY=
+
+# 2. Clé de chiffrement des colonnes
+php -r "echo 'base64:'.base64_encode(random_bytes(32));"
+# → coller dans COLUMN_ENCRYPTION_KEY=
+
+# 3. Mot de passe base de données
+# → choisir un mot de passe fort (≥ 16 caractères) pour DB_PASSWORD=
+```
 
 Variables **pré-configurées** pour `paperlabbj.com` (vérifier si correct) :
-- `APP_URL=https://api.paperlabbj.com`
-- `SESSION_DOMAIN=.paperlabbj.com`
-- `SANCTUM_STATEFUL_DOMAINS=pise.paperlabbj.com`
-- `CORS_ALLOWED_ORIGINS=https://pise.paperlabbj.com`
+- `APP_URL=https://paperlabbj.com`
+- `SESSION_DOMAIN=paperlabbj.com`
+- `SANCTUM_STATEFUL_DOMAINS=paperlabbj.com`
+- `CORS_ALLOWED_ORIGINS=https://paperlabbj.com`
 
 **Frontend :**
 ```bash
 cp web/.env.production.example web/.env
-# VITE_API_URL=https://api.paperlabbj.com  (déjà configuré)
+# VITE_API_URL=https://paperlabbj.com  ← déjà configuré
 ```
 
-### 3. Déployer
+### 3. Déployer en une commande
 
 ```bash
 chmod +x scripts/deploy.sh
@@ -73,7 +90,7 @@ bash scripts/deploy.sh
 
 Le script effectue automatiquement :
 - ✅ Vérification des pré-requis
-- ✅ Validation des variables d'environnement critiques
+- ✅ Validation des variables critiques (APP_KEY, DB_PASSWORD, COLUMN_ENCRYPTION_KEY)
 - ✅ `composer install --no-dev --optimize-autoloader`
 - ✅ `php artisan migrate --force`
 - ✅ `php artisan storage:link`
@@ -83,15 +100,18 @@ Le script effectue automatiquement :
 ### 4. Configurer Nginx
 
 ```bash
+# Copier la config (domaine déjà configuré : paperlabbj.com)
 cp scripts/nginx.conf.example /etc/nginx/sites-available/pise
+
 ln -s /etc/nginx/sites-available/pise /etc/nginx/sites-enabled/
 nginx -t && systemctl reload nginx
 ```
 
-### 5. Certificats TLS (Let's Encrypt)
+### 5. Certificat TLS (Let's Encrypt)
 
 ```bash
-certbot --nginx -d pise.paperlabbj.com -d api.paperlabbj.com
+# Un seul certificat pour le domaine racine
+certbot --nginx -d paperlabbj.com
 ```
 
 ### 6. Permissions fichiers
@@ -124,13 +144,12 @@ FLUSH PRIVILEGES;
 - [ ] `COLUMN_ENCRYPTION_KEY` non vide (généré)
 - [ ] `DB_PASSWORD` fort (≥ 16 caractères aléatoires)
 - [ ] `SESSION_SECURE_COOKIE=true`
-- [ ] `SESSION_DOMAIN=.paperlabbj.com` configuré
-- [ ] `CORS_ALLOWED_ORIGINS=https://pise.paperlabbj.com` (frontend uniquement)
-- [ ] HTTPS activé : `pise.paperlabbj.com` + `api.paperlabbj.com`
+- [ ] `SESSION_DOMAIN=paperlabbj.com`
+- [ ] `CORS_ALLOWED_ORIGINS=https://paperlabbj.com`
+- [ ] HTTPS activé sur `paperlabbj.com` (certbot)
 - [ ] `LOG_LEVEL=error` (pas `debug`)
-- [ ] Fichier `.env` non accessible publiquement (Nginx bloque `/\.env`)
-- [ ] `storage/` en écriture pour `www-data` uniquement
-- [ ] Pas de `vendor/` exposé publiquement
+- [ ] `.env` non accessible (Nginx bloque `/\.env`)
+- [ ] `storage/` accessible en écriture pour `www-data`
 - [ ] MySQL : utilisateur `pise_user` dédié (pas `root`)
 
 ---
@@ -151,7 +170,7 @@ php artisan migrate
 tail -f backend/storage/logs/laravel.log
 
 # Test de santé API
-curl https://api.paperlabbj.com/api/health
+curl https://paperlabbj.com/api/health
 # Réponse attendue: {"status":"ok","timestamp":"...","environment":"production"}
 ```
 
@@ -162,7 +181,7 @@ curl https://api.paperlabbj.com/api/health
 ```bash
 cd /var/www/pise-web
 git pull origin main
-bash scripts/deploy.sh --skip-migrate   # Si pas de nouvelle migration
+bash scripts/deploy.sh --skip-migrate   # Sans migration
 # OU
 bash scripts/deploy.sh                  # Avec migration
 ```
@@ -173,9 +192,9 @@ bash scripts/deploy.sh                  # Avec migration
 
 | Problème | Solution |
 |----------|----------|
-| 403 sur `/storage/` | `php artisan storage:link` |
-| 500 sur toutes les pages | Vérifier `storage/logs/laravel.log` |
-| CORS bloqué | Vérifier `CORS_ALLOWED_ORIGINS` et `SANCTUM_STATEFUL_DOMAINS` |
-| Cookie session perdu | Vérifier `SESSION_DOMAIN=.paperlabbj.com` et `SESSION_SECURE_COOKIE=true` |
+| 403 sur `/storage/` | Vérifier l'alias Nginx et `php artisan storage:link` |
+| 500 sur `/api/*` | Vérifier `storage/logs/laravel.log` |
+| Cookie session non envoyé | Vérifier `SESSION_DOMAIN=paperlabbj.com` et `SESSION_SECURE_COOKIE=true` |
 | Page blanche React | Vérifier `VITE_API_URL` dans `web/.env` avant build |
-| Refresh page → 404 | Vérifier la règle `try_files` Nginx |
+| Refresh page → 404 | Vérifier la règle `try_files $uri $uri/ /index.html` dans Nginx |
+| Upload photo échoue | Vérifier `client_max_body_size 25M` dans Nginx et permissions `storage/` |
