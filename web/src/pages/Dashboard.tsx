@@ -81,9 +81,9 @@ export default function Dashboard(){
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuItem onClick={async () => { const blob = await apiService.exports.pdf({ from }); downloadBlob(`reports-${suffix()}.pdf`, blob); }}>PDF</DropdownMenuItem>
-              <DropdownMenuItem onClick={async () => { const blob = await apiService.exports.excel({ from }); downloadBlob(`reports-${suffix()}.xlsx`, blob); }}>Excel</DropdownMenuItem>
-              <DropdownMenuItem onClick={async () => { const blob = await apiService.exports.geojson({ from }); downloadBlob(`reports-${suffix()}.geojson`, blob); }}>GeoJSON</DropdownMenuItem>
+              <DropdownMenuItem onClick={async () => { const blob = await apiService.exports.reportsPdf({ from }); downloadBlob(`rapports-${suffix()}.pdf`, blob); }}>PDF</DropdownMenuItem>
+              <DropdownMenuItem onClick={async () => { const blob = await apiService.exports.reportsExcel({ from }); downloadBlob(`rapports-${suffix()}.xlsx`, blob); }}>Excel (.xlsx)</DropdownMenuItem>
+              <DropdownMenuItem onClick={async () => { const blob = await apiService.exports.reportsGeojson({ from }); downloadBlob(`rapports-${suffix()}.geojson`, blob); }}>GeoJSON</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>,
         ]}

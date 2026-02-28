@@ -124,9 +124,15 @@ export const apiService = {
     stats: (params: Record<string, unknown> = {}) => withRetry(() => api.get<any>(`/reports/stats${buildQuery(params)}`).then(r => r.data)),
   },
   exports: {
-    pdf: (params: Record<string, unknown> = {}) => api.get<Blob>(`/exports/pdf${buildQuery(params)}`, { responseType: 'blob' }).then(r => r.data),
-    excel: (params: Record<string, unknown> = {}) => api.get<Blob>(`/exports/excel${buildQuery(params)}`, { responseType: 'blob' }).then(r => r.data),
-    geojson: (params: Record<string, unknown> = {}) => api.get<Blob>(`/exports/geojson${buildQuery(params)}`, { responseType: 'blob' }).then(r => r.data),
+    reportsPdf:     (params: Record<string, unknown> = {}) => api.get<Blob>(`/exports/reports.pdf${buildQuery(params)}`,     { responseType: 'blob' }).then(r => r.data),
+    reportsExcel:   (params: Record<string, unknown> = {}) => api.get<Blob>(`/exports/reports.xlsx${buildQuery(params)}`,    { responseType: 'blob' }).then(r => r.data),
+    reportsGeojson: (params: Record<string, unknown> = {}) => api.get<Blob>(`/exports/reports.geojson${buildQuery(params)}`, { responseType: 'blob' }).then(r => r.data),
+    chantiersPdf:   (params: Record<string, unknown> = {}) => api.get<Blob>(`/exports/chantiers.pdf${buildQuery(params)}`,   { responseType: 'blob' }).then(r => r.data),
+    chantiersExcel: (params: Record<string, unknown> = {}) => api.get<Blob>(`/exports/chantiers.xlsx${buildQuery(params)}`,  { responseType: 'blob' }).then(r => r.data),
+    // Legacy aliases (kept for backward compatibility)
+    pdf:     (params: Record<string, unknown> = {}) => api.get<Blob>(`/exports/reports.pdf${buildQuery(params)}`,     { responseType: 'blob' }).then(r => r.data),
+    excel:   (params: Record<string, unknown> = {}) => api.get<Blob>(`/exports/reports.xlsx${buildQuery(params)}`,    { responseType: 'blob' }).then(r => r.data),
+    geojson: (params: Record<string, unknown> = {}) => api.get<Blob>(`/exports/reports.geojson${buildQuery(params)}`, { responseType: 'blob' }).then(r => r.data),
   },
   audit: {
     logs: (params: Record<string, unknown> = {}) => withRetry(() => api.get<PaginatedResponse<any>>(`/audit${buildQuery(params)}`).then(r => r.data)),
